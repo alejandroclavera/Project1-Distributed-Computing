@@ -4,6 +4,9 @@ import common.DataChunk;
 import common.NodeConnexion;
 import common.Query;
 import common.QueryType;
+import node.managers.download.DownloadManager;
+import node.managers.files.FileManager;
+import node.managers.search.SearchManager;
 
 public class NodeManager {
 

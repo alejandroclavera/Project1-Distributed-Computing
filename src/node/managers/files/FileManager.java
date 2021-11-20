@@ -1,4 +1,4 @@
-package node.managers;
+package node.managers.files;
 
 public interface FileManager {
 

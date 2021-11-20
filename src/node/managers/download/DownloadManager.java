@@ -1,4 +1,4 @@
-package node.managers;
+package node.managers.download;
 
 import common.DataChunk;
 import common.NodeConnexion;

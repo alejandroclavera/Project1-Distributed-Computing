@@ -1,4 +1,4 @@
-package node.managers;
+package node.managers.search;
 
 import common.NodeConnexion;
 import common.Query;
