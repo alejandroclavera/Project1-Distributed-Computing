@@ -3,7 +3,6 @@ package node;
 import common.DataChunk;
 import common.NodeConnexion;
 import common.Query;
-
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 
