@@ -3,8 +3,10 @@ package node;
 import common.DataChunk;
 import common.NodeConnexion;
 import common.Query;
+import node.managers.NodeManager;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
+
 
 public class NetworkConnexionNode extends UnicastRemoteObject implements NodeConnexion {
     NodeManager nodeManager;
