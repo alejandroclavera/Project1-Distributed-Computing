@@ -1,5 +1,8 @@
 package node;
 
+import node.managers.NodeManager;
+import node.managers.files.FileManager;
+
 public class Node {
 
     NodeManager nodeManager;
@@ -8,7 +11,5 @@ public class Node {
     public Node(NodeManager nodeManager, FileManager fileManager){
 
     }
-
-
 
 }
