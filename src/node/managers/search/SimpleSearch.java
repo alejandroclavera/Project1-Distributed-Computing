@@ -14,8 +14,7 @@ import java.util.List;
 
 public class SimpleSearch implements SearchManager{
     private NodeManager nodeManager;
-    private List<DataInfo> currentSearchResults;
-    private HashMap<String, List<ConnectionNode>> providers;
+    private HashMap<String, DataInfo> currentSearchResults;
     private ConnectionNode connectionNode;
     private boolean endSearch;
     private int numbersToWait = 0;
@@ -30,12 +29,11 @@ public class SimpleSearch implements SearchManager{
     @Override
     public void setConnectionNode(ConnectionNode connectionNode) {
         this.connectionNode = connectionNode;
-        this.currentSearchResults = new ArrayList<>();
-        this.providers = new HashMap<>();
+        this.currentSearchResults = new HashMap<>();
     }
 
     @Override
-    public List<DataInfo> doSearch() throws RemoteException {
+    public HashMap<String, DataInfo> doSearch() throws RemoteException {
         List<ConnectionNode> nodesToSend = nodeManager.getConnectedNodesList();
         // Set Initial Params
         numbersToWait = nodesToSend.size();
@@ -52,9 +50,7 @@ public class SimpleSearch implements SearchManager{
                 e.printStackTrace();
             }
         }
-        List<DataInfo> tmp = currentSearchResults;
-        currentSearchResults = new ArrayList<>();
-        return tmp;
+        return new HashMap<>(currentSearchResults);
     }
 
     @Override
@@ -73,11 +69,11 @@ public class SimpleSearch implements SearchManager{
                 List<DataInfo> dataInfos = (List<DataInfo>) searchResponse.parameters.get("contents");
                 // Get the content info of the node response
                 for (DataInfo dataInfo : dataInfos) {
-                        if (!providers.containsKey(dataInfo.hash))
-                            providers.put(dataInfo.hash, new ArrayList<>());
-                        // Add providers
-                        providers.get(dataInfo.hash).add(senderNode);
-                        currentSearchResults.add(dataInfo);
+                    if (!currentSearchResults.containsKey(dataInfo.hash)) {
+                        currentSearchResults.put(dataInfo.hash, new DataInfo(dataInfo.hash, null));
+                    }
+                    currentSearchResults.get(dataInfo.hash).titles.add(dataInfo.titles.get(0));
+                    currentSearchResults.get(dataInfo.hash).providers.add(senderNode);
                 }
                 nReci +=1;
                 if (nReci == numbersToWait) {
@@ -89,8 +85,8 @@ public class SimpleSearch implements SearchManager{
     }
 
     @Override
-    public HashMap<String, List<ConnectionNode>> getProviders() {
-        return new HashMap<>(providers);
+    public HashMap<String, DataInfo> getSearchResults() {
+        return new HashMap<>(currentSearchResults);
     }
 
 }

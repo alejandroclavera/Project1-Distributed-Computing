@@ -1,9 +1,6 @@
 package node.managers.download;
 
-import common.ConnectionNode;
-import common.DataChunk;
-import common.Query;
-import common.QueryType;
+import common.*;
 import node.managers.NodeManager;
 
 import java.io.FileInputStream;
@@ -52,6 +49,7 @@ public class SimpleDownloadManger implements DownloadManager {
         } catch (IOException e) {
             bytes = null;
         }
-        toNode.send(new DataChunk(hash, hash.substring(0, 10), 0, bytes), connectionNode);
+        String name = nodeManager.getDataInfo(hash).titles.get(0);
+        toNode.send(new DataChunk(hash, name, 0, bytes), connectionNode);
     }
 }

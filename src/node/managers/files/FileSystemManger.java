@@ -54,7 +54,9 @@ public class FileSystemManger implements FileManager{
             try {
                 Path path = Paths.get(contentsDirectoryPath, contentName);
                 String hash = getHash(path.toString());
-                contentsMap.put(hash, new DataInfo(hash, contentName, null));
+                DataInfo dataInfo = new DataInfo(hash, null);
+                dataInfo.titles.add(contentName);
+                contentsMap.put(hash, dataInfo);
             } catch (Exception e) {
                 System.out.println("Error to get information of the content: " + contentName);
             }
@@ -74,7 +76,7 @@ public class FileSystemManger implements FileManager{
         if (!hash.contains(hash))
             return null;
         DataInfo contentInfo = contentsMap.get(hash);
-        String contentPath = Paths.get(contentsDirectoryPath, contentInfo.title).toString();
+        String contentPath = Paths.get(contentsDirectoryPath, contentInfo.titles.get(0)).toString();
         try {
             fileInputStream = new FileInputStream(contentPath);
         } catch (FileNotFoundException e) {

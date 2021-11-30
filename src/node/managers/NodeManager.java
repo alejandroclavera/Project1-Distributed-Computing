@@ -13,6 +13,7 @@ import java.io.FileInputStream;
 import java.io.Serializable;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class NodeManager {
@@ -62,9 +63,10 @@ public class NodeManager {
     }
 
 
-    public List<DataInfo> search() throws RemoteException {
+    public HashMap<String, DataInfo> search() throws RemoteException {
         return searchManager.doSearch();
     }
+
 
     public void downloadContent(String hash) {
         try {
@@ -74,24 +76,35 @@ public class NodeManager {
         }
     }
 
-    public List<ConnectionNode> getConnectedNodesList() {
-        return connectionManager.getConnectedNodesList();
-    }
-
-    public List<DataInfo> getContentsList() {
-        return fileManager.getContentsList();
-    }
-
-    public List<ConnectionNode> getProviders(String hash) {
-        return searchManager.getProviders().get(hash);
-    }
-
     public FileInputStream getContent(String hash) {
         return fileManager.getContent(hash);
     }
 
     public void addNewContent(String name, byte[] bytes) {
         fileManager.addNewContent(name, bytes);
+    }
+
+    public List<ConnectionNode> getProviders(String hash) {
+        List<ConnectionNode> providers = searchManager.getSearchResults().get(hash).providers;
+        return new ArrayList<>(providers);
+    }
+
+    public List<DataInfo> getContentsList() {
+        return fileManager.getContentsList();
+    }
+
+    public List<ConnectionNode> getConnectedNodesList() {
+        return connectionManager.getConnectedNodesList();
+    }
+
+    public DataInfo getDataInfo(String hash) {
+        List<DataInfo> dataInfos = getContentsList();
+        for(DataInfo dataInfo : dataInfos) {
+            if (dataInfo.hash.equals(hash)) {
+                return dataInfo;
+            }
+        }
+        return searchManager.getSearchResults().get(hash);
     }
 
 }

@@ -10,8 +10,8 @@ import java.util.List;
 
 public interface SearchManager {
     void setConnectionNode(ConnectionNode connectionNode);
-    List<DataInfo> doSearch() throws RemoteException;
+    HashMap<String, DataInfo> doSearch() throws RemoteException;
     void search(Query query, ConnectionNode senderNode) throws RemoteException;
     void processSearchResponse(Query searchResponse, ConnectionNode senderNode);
-    HashMap<String, List<ConnectionNode>> getProviders();
+    HashMap<String, DataInfo> getSearchResults();
 }
