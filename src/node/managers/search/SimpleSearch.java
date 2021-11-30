@@ -15,6 +15,7 @@ import java.util.List;
 public class SimpleSearch implements SearchManager{
     private NodeManager nodeManager;
     private List<DataInfo> currentSearchResults;
+    private HashMap<String, List<ConnectionNode>> providers;
     private ConnectionNode connectionNode;
     private boolean endSearch;
     private int numbersToWait = 0;
@@ -30,6 +31,7 @@ public class SimpleSearch implements SearchManager{
     public void setConnectionNode(ConnectionNode connectionNode) {
         this.connectionNode = connectionNode;
         this.currentSearchResults = new ArrayList<>();
+        this.providers = new HashMap<>();
     }
 
     @Override
@@ -71,6 +73,10 @@ public class SimpleSearch implements SearchManager{
                 List<DataInfo> dataInfos = (List<DataInfo>) searchResponse.parameters.get("contents");
                 // Get the content info of the node response
                 for (DataInfo dataInfo : dataInfos) {
+                        if (!providers.containsKey(dataInfo.hash))
+                            providers.put(dataInfo.hash, new ArrayList<>());
+                        // Add providers
+                        providers.get(dataInfo.hash).add(senderNode);
                         currentSearchResults.add(dataInfo);
                 }
                 nReci +=1;
@@ -80,6 +86,11 @@ public class SimpleSearch implements SearchManager{
                 }
             }
         }
+    }
+
+    @Override
+    public HashMap<String, List<ConnectionNode>> getProviders() {
+        return new HashMap<>(providers);
     }
 
 }

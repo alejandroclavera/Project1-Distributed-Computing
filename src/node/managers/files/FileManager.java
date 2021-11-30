@@ -1,5 +1,13 @@
 package node.managers.files;
 
-public interface FileManager {
+import common.DataInfo;
 
+import java.io.FileInputStream;
+import java.util.List;
+
+public interface FileManager {
+    void recognizeContents();
+    List<DataInfo> getContentsList();
+    FileInputStream getContent(String hash);
+    void addNewContent(String name, byte[] allBytes);
 }

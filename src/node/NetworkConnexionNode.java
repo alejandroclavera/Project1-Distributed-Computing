@@ -16,7 +16,7 @@ public class NetworkConnexionNode extends UnicastRemoteObject implements Connect
     }
 
     @Override
-    public void send(Query query, ConnectionNode senderNode) {
+    public void send(Query query, ConnectionNode senderNode) throws RemoteException {
         nodeManager.processQuery(query, senderNode);
     }
 

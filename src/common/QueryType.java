@@ -1,5 +1,10 @@
 package common;
 
 public enum QueryType {
-    SEARCH, DOWNLOAD, CONNECTION, CONNECTION_ACCEPTED, CONNECTION_REJECTED
+    // Connection types
+    CONNECTION, CONNECTION_ACCEPTED, CONNECTION_REJECTED,
+    // Search types
+    SEARCH, SEARCH_RESPONSE,
+    // Download content types
+    DOWNLOAD,
 }
