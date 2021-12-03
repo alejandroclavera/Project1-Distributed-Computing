@@ -70,7 +70,7 @@ public class SimpleSearch implements SearchManager{
                 // Get the content info of the node response
                 for (DataInfo dataInfo : dataInfos) {
                     if (!currentSearchResults.containsKey(dataInfo.hash)) {
-                        currentSearchResults.put(dataInfo.hash, new DataInfo(dataInfo.hash, null));
+                        currentSearchResults.put(dataInfo.hash, new DataInfo(dataInfo.hash, dataInfo.size, null));
                     }
                     currentSearchResults.get(dataInfo.hash).titles.add(dataInfo.titles.get(0));
                     currentSearchResults.get(dataInfo.hash).providers.add(senderNode);

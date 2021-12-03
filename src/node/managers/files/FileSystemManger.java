@@ -3,6 +3,7 @@ package node.managers.files;
 import common.DataInfo;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
@@ -54,7 +55,8 @@ public class FileSystemManger implements FileManager{
             try {
                 Path path = Paths.get(contentsDirectoryPath, contentName);
                 String hash = getHash(path.toString());
-                DataInfo dataInfo = new DataInfo(hash, null);
+                long size = Files.size(Paths.get(contentsDirectoryPath, contentName));
+                DataInfo dataInfo = new DataInfo(hash, size, null);
                 dataInfo.titles.add(contentName);
                 contentsMap.put(hash, dataInfo);
             } catch (Exception e) {
@@ -91,6 +93,23 @@ public class FileSystemManger implements FileManager{
         try {
             FileOutputStream fileOutputStream = new FileOutputStream(contentPath);
             fileOutputStream.write(allBytes);
+            fileOutputStream.close();
+            // Add to the hashmap (TODO)
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void addNewContent(String name, List<byte[]> bytes) {
+        String contentPath = Paths.get(contentsDirectoryPath, name).toString();
+        try {
+            FileOutputStream fileOutputStream = new FileOutputStream(contentPath);
+            for (byte[] newbyte : bytes) {
+                fileOutputStream.write(newbyte);
+            }
             fileOutputStream.close();
             // Add to the hashmap (TODO)
         } catch (FileNotFoundException e) {
