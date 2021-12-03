@@ -10,4 +10,5 @@ public interface FileManager {
     List<DataInfo> getContentsList();
     FileInputStream getContent(String hash);
     void addNewContent(String name, byte[] allBytes);
+    public void addNewContent(String name, List<byte[]> bytes);
 }

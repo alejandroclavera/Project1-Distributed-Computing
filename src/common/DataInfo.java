@@ -8,7 +8,7 @@ import java.util.List;
 public class DataInfo implements Serializable {
     public final String hash;
     public List<String> titles;
-    public final int size;
+    public final long size;
     public final HashMap<String, String> metadata;
     public List<ConnectionNode> providers;
 
@@ -16,7 +16,7 @@ public class DataInfo implements Serializable {
        this(hash, 0, metadata);
     }
 
-    public DataInfo(String hash, int size, HashMap<String, String> metadata) {
+    public DataInfo(String hash, long size, HashMap<String, String> metadata) {
         this.hash = hash;
         this.titles = new ArrayList<>();
         this.metadata = metadata;
