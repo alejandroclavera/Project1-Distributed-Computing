@@ -26,7 +26,7 @@ public class SimpleDownloadManger implements DownloadManager {
     public void download(String hash) throws RemoteException {
         List<ConnectionNode> providers = nodeManager.getProviders(hash);
         if (providers != null) {
-            HashMap<String, String> params = new HashMap<>();
+            HashMap<String, Object> params = new HashMap<>();
             params.put("hash", hash);
             Query query = new Query(QueryType.DOWNLOAD, params);
             providers.get(0).send(query, connectionNode);

@@ -9,14 +9,14 @@ public class DataInfo implements Serializable {
     public final String hash;
     public List<String> titles;
     public final long size;
-    public final HashMap<String, String> metadata;
+    public final HashMap<String, ? extends Serializable> metadata;
     public List<ConnectionNode> providers;
 
-    public DataInfo(String hash, HashMap<String, String> metadata) {
+    public DataInfo(String hash, HashMap<String, ? extends Serializable> metadata) {
        this(hash, 0, metadata);
     }
 
-    public DataInfo(String hash, long size, HashMap<String, String> metadata) {
+    public DataInfo(String hash, long size, HashMap<String, ? extends Serializable> metadata) {
         this.hash = hash;
         this.titles = new ArrayList<>();
         this.metadata = metadata;

@@ -27,9 +27,14 @@ public class SimpleConnection implements ConnectionManager {
 
     @Override
     public void connect(String host) {
+        connect(host, 1099);
+    }
+
+    @Override
+    public void connect(String host, int port) {
         try {
             //Get the ConnectionNode object of the node to connect
-            Registry registry = LocateRegistry.getRegistry(host);
+            Registry registry = LocateRegistry.getRegistry(host, port);
             ConnectionNode nodeToConnect = (ConnectionNode) registry.lookup("node");
             Query connectionQuery = new Query(QueryType.CONNECTION, null);
             // Send the connection query
@@ -46,7 +51,7 @@ public class SimpleConnection implements ConnectionManager {
 
     @Override
     public void processConnexion(Query connectionQuery, ConnectionNode senderNode) {
-        HashMap<String, String> parameters = new HashMap<>();
+        HashMap<String, Object> parameters = new HashMap<>();
         QueryType responseType;
         if (connectionQuery.queryType != QueryType.CONNECTION) {
             responseType = QueryType .CONNECTION_REJECTED;

@@ -7,6 +7,7 @@ import node.managers.download.DownloadManager;
 import node.managers.download.SimpleDownloadManger;
 import node.managers.download.SplitDownloadManager;
 import node.managers.files.FileManager;
+import node.managers.search.DFSManager;
 import node.managers.search.SearchManager;
 import node.managers.search.SimpleSearch;
 
@@ -27,7 +28,7 @@ public class NodeManager {
 
     public NodeManager(FileManager fileManager) {
         this.fileManager = fileManager;
-        this.searchManager = new SimpleSearch(this);
+        this.searchManager = new DFSManager(this);
         this.downloadManager = new SplitDownloadManager(this);
         this.connectionManager = new SimpleConnection();
 
@@ -42,6 +43,10 @@ public class NodeManager {
 
     public void connectTo(String host) {
         connectionManager.connect(host);
+    }
+
+    public void connectTo(String host, int port) {
+        connectionManager.connect(host, port);
     }
 
     public void processQuery(Query query, ConnectionNode senderNode) throws RemoteException {

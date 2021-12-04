@@ -45,7 +45,7 @@ public class SplitDownloadManager implements DownloadManager {
         List<ConnectionNode> providers = contentDataInfo.providers;
         for (long chunkNumber = 0; chunkNumber < numberOfChunks; chunkNumber++) {
             ConnectionNode nodeToSend = providers.get((int)(chunkNumber % providers.size()));
-            HashMap<String, String> parameters = new HashMap<>();
+            HashMap<String, Object> parameters = new HashMap<>();
             parameters.put("hash",  hash);
             parameters.put("chunkNumber", String.valueOf(chunkNumber));
             Query query = new Query(QueryType.DOWNLOAD, parameters);
@@ -77,10 +77,10 @@ public class SplitDownloadManager implements DownloadManager {
     @Override
     public void upload(Query query, ConnectionNode toNode) throws RemoteException {
         byte bytes[] = new byte[numBytesChunk];
-        HashMap<String, String> paramas = (HashMap<String, String>) query.parameters;
-        String hash = paramas.get("hash");
+        HashMap<String, Object> paramas = (HashMap<String, Object>) query.parameters;
+        String hash = (String) paramas.get("hash");
         DataInfo dataInfo = nodeManager.getDataInfo(hash);
-        long chunkNumber = Long.parseLong(paramas.get("chunkNumber"));
+        long chunkNumber = Long.parseLong((String) paramas.get("chunkNumber"));
         FileInputStream fileInputStream = nodeManager.getContent(hash);
         try {
             fileInputStream.skip(numBytesChunk * chunkNumber);

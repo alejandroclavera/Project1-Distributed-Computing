@@ -8,6 +8,7 @@ import java.util.List;
 public interface ConnectionManager {
     public void setConnectionNode(ConnectionNode connectionNode);
     public void connect(String host);
+    public void connect(String host, int port);
     public void processConnexion(Query connectionQuery, ConnectionNode senderNode);
     public void notifyConnection(Query connectionResponse, ConnectionNode node);
     public List<ConnectionNode> getConnectedNodesList();
