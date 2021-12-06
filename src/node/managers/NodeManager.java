@@ -93,8 +93,8 @@ public class NodeManager {
         fileManager.addNewContent(name, bytes);
     }
 
-    public void addNewContent(String name, List<byte[]> bytesList) {
-        fileManager.addNewContent(name, bytesList);
+    public void addNewContent(String name, List<DataChunk> dataChunkList) {
+        fileManager.addNewContent(name, dataChunkList);
     }
 
     public List<ConnectionNode> getProviders(String hash) {

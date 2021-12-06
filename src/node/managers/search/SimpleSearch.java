@@ -86,7 +86,7 @@ public class SimpleSearch implements SearchManager{
 
     @Override
     public HashMap<String, DataInfo> getSearchResults() {
-        return new HashMap<>(currentSearchResults);
+        return currentSearchResults;
     }
 
 }

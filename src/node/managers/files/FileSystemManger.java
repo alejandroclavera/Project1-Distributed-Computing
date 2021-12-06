@@ -1,5 +1,6 @@
 package node.managers.files;
 
+import common.DataChunk;
 import common.DataInfo;
 
 import java.io.*;
@@ -65,8 +66,6 @@ public class FileSystemManger implements FileManager{
         }
     }
 
-
-
     @Override
     public List<DataInfo> getContentsList() {
         return new ArrayList<>(contentsMap.values());
@@ -102,13 +101,29 @@ public class FileSystemManger implements FileManager{
         }
     }
 
-    @Override
-    public void addNewContent(String name, List<byte[]> bytes) {
+
+    public void addNewContent(String name, DataChunk dataChunk) {
+        byte allBytes[] = dataChunk.chunkBytes;
         String contentPath = Paths.get(contentsDirectoryPath, name).toString();
         try {
             FileOutputStream fileOutputStream = new FileOutputStream(contentPath);
-            for (byte[] newbyte : bytes) {
-                fileOutputStream.write(newbyte);
+            fileOutputStream.write(allBytes);
+            fileOutputStream.close();
+            // Add to the hashmap (TODO)
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void addNewContent(String name, List<DataChunk> dataChunks) {
+        String contentPath = Paths.get(contentsDirectoryPath, name).toString();
+        try {
+            FileOutputStream fileOutputStream = new FileOutputStream(contentPath);
+            for (DataChunk dataChunk:  dataChunks) {
+                fileOutputStream.write(dataChunk.chunkBytes, 0, dataChunk.size);
             }
             fileOutputStream.close();
             // Add to the hashmap (TODO)

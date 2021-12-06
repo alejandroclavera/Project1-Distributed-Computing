@@ -1,5 +1,6 @@
 package node.managers.files;
 
+import common.DataChunk;
 import common.DataInfo;
 
 import java.io.FileInputStream;
@@ -10,5 +11,5 @@ public interface FileManager {
     List<DataInfo> getContentsList();
     FileInputStream getContent(String hash);
     void addNewContent(String name, byte[] allBytes);
-    public void addNewContent(String name, List<byte[]> bytes);
+    void addNewContent(String name, List<DataChunk> dataChunks);
 }

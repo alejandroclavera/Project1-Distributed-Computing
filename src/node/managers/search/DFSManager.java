@@ -52,13 +52,12 @@ public class DFSManager implements SearchManager {
 
     @Override
     public void search(Query query, ConnectionNode senderNode) throws RemoteException {
+        List<DataInfo> dataInfoReceived;
         ConnectionNode topSearchNode = (ConnectionNode) query.parameters.get("topQuery");
         List<ConnectionNode> askedNodes = (List<ConnectionNode>) query.parameters.get("askedNodes");
-        Object myNotifyObject = new Object();
-        List<DataInfo> dataInfoReceived = new ArrayList<>();
         int depth = (int) query.parameters.get("depth") + 1;
 
-        // Update the
+        // Update the depth param
         query.parameters.replace("depth", depth);
         // Propagate the query to the node of the next levels
         dataInfoReceived = searchToNextLevel(query, false);
