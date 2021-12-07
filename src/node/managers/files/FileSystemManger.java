@@ -134,4 +134,30 @@ public class FileSystemManger implements FileManager{
         }
     }
 
+    @Override
+    public void writeInTemporalFile(String hash, List<DataChunk> dataChunks) {
+        String tmpFilePath = Paths.get(contentsDirectoryPath, hash.substring(0,50)).toString() + ".tmp";
+        for (DataChunk dataChunk : dataChunks) {
+            try {
+                RandomAccessFile randomAccessFile = new RandomAccessFile(new File(tmpFilePath), "rws");
+                randomAccessFile.seek(dataChunk.chunkNumber * (10000000)); // change
+                randomAccessFile.write(dataChunk.chunkBytes, 0, dataChunk.size);
+                randomAccessFile.close();
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public void temporalToFile(String hash, String fileName) {
+        String tmpFilePath = Paths.get(contentsDirectoryPath, hash.substring(0,50)).toString() + ".tmp";
+        String contentFilePath = Paths.get(contentsDirectoryPath, fileName).toString();
+        File tmpFile = new File(tmpFilePath);
+        File contentFile = new File(contentFilePath);
+        tmpFile.renameTo(contentFile);
+    }
+
 }

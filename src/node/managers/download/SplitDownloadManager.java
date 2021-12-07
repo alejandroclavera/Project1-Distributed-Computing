@@ -3,10 +3,7 @@ package node.managers.download;
 import common.*;
 import node.managers.NodeManager;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.Serializable;
+import java.io.*;
 import java.nio.file.Paths;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
@@ -17,7 +14,8 @@ public class SplitDownloadManager implements DownloadManager {
     private ConnectionNode connectionNode;
     private NodeManager nodeManager;
     private HashMap<String, List<DataChunk>> pendingDownload;
-    private int numBytesChunk = 100;
+    private int chunckWindowSize = 50;
+    private int numBytesChunk = 10000000;
 
 
     public SplitDownloadManager(NodeManager nodeManager) {
@@ -48,9 +46,14 @@ public class SplitDownloadManager implements DownloadManager {
     public void download(DataChunk dataChunk, ConnectionNode sender) {
         String hash = dataChunk.hash;
         List<DataChunk> dataChunks = pendingDownload.get(hash);
+        DataInfo contentDataInfo = nodeManager.getDataInfo(dataChunk.hash);
         synchronized (dataChunks) {
-            dataChunks.add((int)dataChunk.chunkNumber, dataChunk);
-            dataChunks.notifyAll();
+            dataChunks.add((int)dataChunk.chunkNumber % chunckWindowSize, dataChunk);
+            if (dataChunks.size() != 0 && (dataChunks.size()  % chunckWindowSize) == 0) {
+                writeContent(hash);
+                dataChunks.clear();
+                dataChunks.notifyAll();
+            }
         }
     }
 
@@ -80,6 +83,8 @@ public class SplitDownloadManager implements DownloadManager {
             numberOfChunks += 1;
 
         pendingDownload.put(contentDataInfo.hash, new ArrayList<>());
+
+        List<DataChunk> chunckBytesList = pendingDownload.get(hash);
         for (long chunkNumber = 0; chunkNumber < numberOfChunks; chunkNumber++) {
             ConnectionNode nodeToSend = providers.get((int)(chunkNumber % providers.size()));
             HashMap<String, Object> parameters = new HashMap<>();
@@ -87,26 +92,41 @@ public class SplitDownloadManager implements DownloadManager {
             parameters.put("chunkNumber", String.valueOf(chunkNumber));
             Query query = new Query(QueryType.DOWNLOAD, parameters);
             nodeToSend.send(query, connectionNode);
-        }
-        // Start to download
-        List<DataChunk> chunckBytesList = pendingDownload.get(hash);
-        int chunck = 0;
-        synchronized (chunckBytesList) {
-            while (chunckBytesList.size() < numberOfChunks) {
-                try {
-                    chunckBytesList.wait();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+            if (chunkNumber == 0  || (chunkNumber + 1) % chunckWindowSize != 0)
+                continue;
+            // Wait to the X chunks
+            synchronized (chunckBytesList) {
+                while (chunckBytesList.size() > 0) {
+                    try {
+                        chunckBytesList.wait();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }
         writeContent(hash);
+        nodeManager.tmpFileToFile(hash, contentDataInfo.titles.get(0));
     }
 
     private void writeContent(String hash) {
         List<DataChunk> chunkList = pendingDownload.get(hash);
-        List<byte[]> bytesList = new ArrayList<>();
-        DataInfo dataInfo = nodeManager.getDataInfo(hash);
-        nodeManager.addNewContent(dataInfo.titles.get(0), chunkList);
+        DataInfo contentDataInfo = nodeManager.getDataInfo(hash);
+        /*
+        for (DataChunk dataChunk : chunkList) {
+            try {
+                RandomAccessFile randomAccessFile = new RandomAccessFile(new File("contentsClient/"+ contentDataInfo.titles.get(0)), "rws");
+                randomAccessFile.seek(dataChunk.chunkNumber * numBytesChunk);
+                randomAccessFile.write(dataChunk.chunkBytes, 0, dataChunk.size);
+                randomAccessFile.close();
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.out.println("Excepcion");
+            }
+        }
+         */
+        nodeManager.addContentsBytesToTMPFile(hash, chunkList);
     }
 }

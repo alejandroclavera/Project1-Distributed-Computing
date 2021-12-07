@@ -12,4 +12,6 @@ public interface FileManager {
     FileInputStream getContent(String hash);
     void addNewContent(String name, byte[] allBytes);
     void addNewContent(String name, List<DataChunk> dataChunks);
+    void writeInTemporalFile(String hash, List<DataChunk> dataChunks);
+    void temporalToFile(String hash, String fileName);
 }

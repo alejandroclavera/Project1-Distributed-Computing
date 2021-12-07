@@ -4,15 +4,13 @@ import common.*;
 import node.managers.connection.ConnectionManager;
 import node.managers.connection.SimpleConnection;
 import node.managers.download.DownloadManager;
-import node.managers.download.SimpleDownloadManger;
 import node.managers.download.SplitDownloadManager;
 import node.managers.files.FileManager;
 import node.managers.search.DFSManager;
 import node.managers.search.SearchManager;
-import node.managers.search.SimpleSearch;
+
 
 import java.io.FileInputStream;
-import java.io.Serializable;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -95,6 +93,14 @@ public class NodeManager {
 
     public void addNewContent(String name, List<DataChunk> dataChunkList) {
         fileManager.addNewContent(name, dataChunkList);
+    }
+
+    public void addContentsBytesToTMPFile(String hash, List<DataChunk> dataChunks) {
+        fileManager.writeInTemporalFile(hash, dataChunks);
+    }
+
+    public void tmpFileToFile(String hash, String contentFileName) {
+        fileManager.temporalToFile(hash, contentFileName);
     }
 
     public List<ConnectionNode> getProviders(String hash) {
