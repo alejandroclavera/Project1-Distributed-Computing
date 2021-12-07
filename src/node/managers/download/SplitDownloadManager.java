@@ -34,6 +34,7 @@ public class SplitDownloadManager implements DownloadManager {
     public void download(String hash) throws RemoteException {
         DataInfo contentDataInfo = nodeManager.getDataInfo(hash);
         List<ConnectionNode> providers = nodeManager.getProviders(hash);
+        // Download the content if the content have a providers
         if (providers.size() != 0) {
             downLoadProcess(contentDataInfo, providers);
         }
@@ -47,7 +48,7 @@ public class SplitDownloadManager implements DownloadManager {
         synchronized (dataChunks) {
             // Add the new dataChunk to the list
             dataChunks.add((int)dataChunk.chunkNumber % chunckWindowSize, dataChunk);
-            // if all chunks of the window are in the list, its written in a temporal file
+            // If all the window fragments are in the queue, are written to a temporary file
             if (dataChunks.size() != 0 && (dataChunks.size()  % chunckWindowSize) == 0) {
                 writeContent(hash);
                 // Clean the dataChunks of the windows
