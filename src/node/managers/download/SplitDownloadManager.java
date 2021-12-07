@@ -4,11 +4,8 @@ import common.*;
 import node.managers.NodeManager;
 
 import java.io.*;
-import java.nio.file.Paths;
 import java.rmi.RemoteException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public class SplitDownloadManager implements DownloadManager {
     private ConnectionNode connectionNode;
@@ -38,7 +35,7 @@ public class SplitDownloadManager implements DownloadManager {
         DataInfo contentDataInfo = nodeManager.getDataInfo(hash);
         List<ConnectionNode> providers = nodeManager.getProviders(hash);
         if (providers.size() != 0) {
-            downLoadProccess(contentDataInfo, providers);
+            downLoadProcess(contentDataInfo, providers);
         }
     }
 
@@ -48,10 +45,14 @@ public class SplitDownloadManager implements DownloadManager {
         List<DataChunk> dataChunks = pendingDownload.get(hash);
         DataInfo contentDataInfo = nodeManager.getDataInfo(dataChunk.hash);
         synchronized (dataChunks) {
+            // Add the new dataChunk to the list
             dataChunks.add((int)dataChunk.chunkNumber % chunckWindowSize, dataChunk);
+            // if all chunks of the window are in the list, its written in a temporal file
             if (dataChunks.size() != 0 && (dataChunks.size()  % chunckWindowSize) == 0) {
                 writeContent(hash);
+                // Clean the dataChunks of the windows
                 dataChunks.clear();
+                // Notifies to the download process to continue with the next chunks window
                 dataChunks.notifyAll();
             }
         }
@@ -60,41 +61,52 @@ public class SplitDownloadManager implements DownloadManager {
     @Override
     public void upload(Query query, ConnectionNode toNode) throws RemoteException {
         byte bytes[] = new byte[numBytesChunk];
+        // Get the query params
         HashMap<String, Object> paramas = query.parameters;
         String hash = (String) paramas.get("hash");
+        // Get the dataInfo of the file
         DataInfo dataInfo = nodeManager.getDataInfo(hash);
         long chunkNumber = Long.parseLong((String) paramas.get("chunkNumber"));
+        // Get the contentFile to send
         FileInputStream fileInputStream = nodeManager.getContent(hash);
         try {
+            // Find the chunk to send
             fileInputStream.skip(numBytesChunk * chunkNumber);
+            // Get the size of the chunk
             int size = fileInputStream.read(bytes, 0, numBytesChunk);
             DataChunk dataChunk = new DataChunk(hash, dataInfo.titles.get(0), (int)chunkNumber, size, bytes);
+            // Send the chunk
             toNode.send(dataChunk, connectionNode);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private void downLoadProccess(DataInfo contentDataInfo, List<ConnectionNode> providers) throws RemoteException {
+    private void downLoadProcess(DataInfo contentDataInfo, List<ConnectionNode> providers) throws RemoteException {
         String hash = contentDataInfo.hash;
+        // Calculate the number of chunks
         long numberOfChunks = contentDataInfo.size / numBytesChunk;
-
         if (contentDataInfo.size % numBytesChunk != 0)
             numberOfChunks += 1;
 
+        // Create a Chunks Queue for the download of the content
         pendingDownload.put(contentDataInfo.hash, new ArrayList<>());
-
         List<DataChunk> chunckBytesList = pendingDownload.get(hash);
+
+        // Split download
         for (long chunkNumber = 0; chunkNumber < numberOfChunks; chunkNumber++) {
+            // Select the next provider (cyclic way)
             ConnectionNode nodeToSend = providers.get((int)(chunkNumber % providers.size()));
+            // Set query params
             HashMap<String, Object> parameters = new HashMap<>();
             parameters.put("hash",  hash);
             parameters.put("chunkNumber", String.valueOf(chunkNumber));
             Query query = new Query(QueryType.DOWNLOAD, parameters);
+            // Send the query
             nodeToSend.send(query, connectionNode);
             if (chunkNumber == 0  || (chunkNumber + 1) % chunckWindowSize != 0)
                 continue;
-            // Wait to the X chunks
+            // Wait for the arrival of all the window chunks
             synchronized (chunckBytesList) {
                 while (chunckBytesList.size() > 0) {
                     try {
@@ -105,28 +117,15 @@ public class SplitDownloadManager implements DownloadManager {
                 }
             }
         }
+        // Write the last fragments if the number of fragments is less than the size of the windows
         writeContent(hash);
         nodeManager.tmpFileToFile(hash, contentDataInfo.titles.get(0));
+        // Remove the chunk queue of the content download
+        pendingDownload.remove(hash);
     }
 
     private void writeContent(String hash) {
         List<DataChunk> chunkList = pendingDownload.get(hash);
-        DataInfo contentDataInfo = nodeManager.getDataInfo(hash);
-        /*
-        for (DataChunk dataChunk : chunkList) {
-            try {
-                RandomAccessFile randomAccessFile = new RandomAccessFile(new File("contentsClient/"+ contentDataInfo.titles.get(0)), "rws");
-                randomAccessFile.seek(dataChunk.chunkNumber * numBytesChunk);
-                randomAccessFile.write(dataChunk.chunkBytes, 0, dataChunk.size);
-                randomAccessFile.close();
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-                System.out.println("Excepcion");
-            }
-        }
-         */
         nodeManager.addContentsBytesToTMPFile(hash, chunkList);
     }
 }
