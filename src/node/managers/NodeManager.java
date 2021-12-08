@@ -39,12 +39,12 @@ public class NodeManager {
         downloadManager.setConnectionNode(connectionNode);
     }
 
-    public void connectTo(String host) {
-        connectionManager.connect(host);
+    public boolean connectTo(String host) {
+        return connectionManager.connect(host);
     }
 
-    public void connectTo(String host, int port) {
-        connectionManager.connect(host, port);
+    public boolean connectTo(String host, int port) {
+        return connectionManager.connect(host, port);
     }
 
     public void processQuery(Query query, ConnectionNode senderNode) throws RemoteException {
@@ -66,7 +66,6 @@ public class NodeManager {
         downloadManager.download(chunk, sender);
     }
 
-
     public HashMap<String, DataInfo> search() throws RemoteException {
         return searchManager.doSearch();
     }
@@ -83,6 +82,11 @@ public class NodeManager {
     //***********************************************************************
     // * METHODS THAT ALLOW THE INTERACTION BETWEEN THE DIFERENTS MANGAGERS *
     //***********************************************************************
+
+    public void forceRemoveConnection(ConnectionNode nodeToRemove) {
+        connectionManager.forceRemoveConnection(nodeToRemove);
+    }
+
     public FileInputStream getContent(String hash) {
         return fileManager.getContent(hash);
     }

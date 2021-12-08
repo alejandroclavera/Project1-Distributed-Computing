@@ -7,8 +7,9 @@ import java.util.List;
 
 public interface ConnectionManager {
     public void setConnectionNode(ConnectionNode connectionNode);
-    public void connect(String host);
-    public void connect(String host, int port);
+    public boolean connect(String host);
+    public boolean connect(String host, int port);
+    public void forceRemoveConnection(ConnectionNode nodeToRemove);
     public void processConnexion(Query connectionQuery, ConnectionNode senderNode);
     public void notifyConnection(Query connectionResponse, ConnectionNode node);
     public List<ConnectionNode> getConnectedNodesList();

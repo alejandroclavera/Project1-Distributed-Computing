@@ -39,7 +39,7 @@ public class DFSManager implements SearchManager {
         params.put("askedNodes", askedNodes);
         params.put("topQuery", connectionNode);
         params.put("depth", 0);
-        // add the node that init the query to the list of the askedNodes(to avoid loops)
+        // Add the node that init the query to the list of the askedNodes(to avoid loops)
         askedNodes.add(connectionNode);
 
         // Send the search query to the nodes that the current node it is connected
@@ -59,7 +59,7 @@ public class DFSManager implements SearchManager {
 
         // Update the depth param
         query.parameters.replace("depth", depth);
-        // Propagate the query to the node of the next levels
+        // Propagate the query to the nodes of the next levels
         dataInfoReceived = searchToNextLevel(query, false);
 
         // Add the contents node to the explored contentsList

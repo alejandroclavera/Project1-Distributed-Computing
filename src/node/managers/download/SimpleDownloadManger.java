@@ -23,13 +23,18 @@ public class SimpleDownloadManger implements DownloadManager {
     }
 
     @Override
-    public void download(String hash) throws RemoteException {
+    public void download(String hash) {
         List<ConnectionNode> providers = nodeManager.getProviders(hash);
         if (providers != null) {
             HashMap<String, Object> params = new HashMap<>();
             params.put("hash", hash);
             Query query = new Query(QueryType.DOWNLOAD, params);
-            providers.get(0).send(query, connectionNode);
+            ConnectionNode toSendNode = providers.get(0);
+            try {
+                toSendNode.send(query, connectionNode);
+            } catch (RemoteException e) {
+                nodeManager.forceRemoveConnection(toSendNode);
+            }
         }
     }
 
@@ -39,7 +44,7 @@ public class SimpleDownloadManger implements DownloadManager {
     }
 
     @Override
-    public void upload(Query query, ConnectionNode toNode) throws RemoteException {
+    public void upload(Query query, ConnectionNode toNode) {
         String hash = (String) query.parameters.get("hash");
         FileInputStream fileStream = nodeManager.getContent(hash);
         byte bytes[];
@@ -50,6 +55,11 @@ public class SimpleDownloadManger implements DownloadManager {
             bytes = null;
         }
         String name = nodeManager.getDataInfo(hash).titles.get(0);
-        toNode.send(new DataChunk(hash, name, 0, bytes), connectionNode);
+        try {
+            toNode.send(new DataChunk(hash, name, 0, bytes), connectionNode);
+        } catch (RemoteException e) {
+            // Force disconnection of the node
+            nodeManager.forceRemoveConnection(toNode);
+        }
     }
 }

@@ -159,6 +159,14 @@ public class FileSystemManger implements FileManager{
         File tmpFile = new File(tmpFilePath);
         File contentFile = new File(contentFilePath);
         tmpFile.renameTo(contentFile);
+        try {
+            long size = Files.size(Paths.get(contentFilePath));
+            DataInfo dataInfo = new DataInfo(hash, size, null);
+            dataInfo.titles.add(fileName);
+            contentsMap.put(hash, dataInfo);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 }

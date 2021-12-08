@@ -54,11 +54,15 @@ public class SimpleSearch implements SearchManager{
     }
 
     @Override
-    public void search(Query query, ConnectionNode senderNode) throws RemoteException {
+    public void search(Query query, ConnectionNode senderNode)  {
         System.out.println("Procesando peticion de busqueda");
         HashMap<String, Object> queryParams = new HashMap<>();
         queryParams.put("contents", (ArrayList<DataInfo>)nodeManager.getContentsList());
-        senderNode.send(new Query(QueryType.SEARCH_RESPONSE, queryParams), connectionNode);
+        try {
+            senderNode.send(new Query(QueryType.SEARCH_RESPONSE, queryParams), connectionNode);
+        } catch (RemoteException e) {
+            nodeManager.forceRemoveConnection(senderNode);
+        }
     }
 
     @Override

@@ -26,26 +26,43 @@ public class SimpleConnection implements ConnectionManager {
     }
 
     @Override
-    public void connect(String host) {
-        connect(host, 1099);
+    public boolean connect(String host) {
+        return connect(host, 1099);
     }
 
     @Override
-    public void connect(String host, int port) {
+    public boolean connect(String host, int port) {
+        ConnectionNode nodeToConnect = null;
         try {
             //Get the ConnectionNode object of the node to connect
             Registry registry = LocateRegistry.getRegistry(host, port);
-            ConnectionNode nodeToConnect = (ConnectionNode) registry.lookup("node");
+            nodeToConnect = (ConnectionNode) registry.lookup("node");
             Query connectionQuery = new Query(QueryType.CONNECTION, null);
             // Send the connection query
             synchronized (pendingNodes) {
                 pendingNodes.add(nodeToConnect);
             }
             nodeToConnect.send(connectionQuery, connectionNode);
+            synchronized (connectedNodes) {
+                while (!connectedNodes.contains(nodeToConnect) && connectedNodes.contains(connectionNode)) {
+                    connectedNodes.wait();
+                }
+            }
         } catch (RemoteException e) {
-            e.printStackTrace();
-        } catch (NotBoundException e) {
-            e.printStackTrace();
+            if (nodeToConnect != null)
+                pendingNodes.remove(nodeToConnect);
+            return false;
+        } catch (NotBoundException | InterruptedException e ) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public void forceRemoveConnection(ConnectionNode nodeToRemove) {
+        synchronized (connectedNodes) {
+            if (connectedNodes.contains(nodeToRemove))
+                connectedNodes.remove(nodeToRemove);
         }
     }
 
@@ -59,14 +76,20 @@ public class SimpleConnection implements ConnectionManager {
         } else {
             responseType = QueryType.CONNECTION_ACCEPTED;
             parameters.put("message", "Connection accepted");
-            connectedNodes.add(senderNode);
+            synchronized (connectedNodes) {
+                connectedNodes.add(senderNode);
+            }
             System.out.println("CONNECTION ACCEPTED");
         }
         // Send the connection response
         try {
             senderNode.send(new Query(responseType, parameters), connectionNode);
         } catch (RemoteException e) {
-            e.printStackTrace();
+           // If a exception occurred remove the node of the list of connectedNodes
+           synchronized (connectedNodes) {
+               if (connectedNodes.contains(senderNode))
+                   connectedNodes.remove(senderNode);
+           }
         }
     }
 
@@ -78,11 +101,13 @@ public class SimpleConnection implements ConnectionManager {
                     pendingNodes.remove(node);
                     synchronized (connectedNodes) {
                         connectedNodes.add(node);
+                        connectedNodes.notifyAll();
                     }
                 }
             } else if (connectionResponse.queryType == QueryType.CONNECTION_REJECTED) {
                 if (pendingNodes.contains(node))
                     pendingNodes.remove(node);
+                    connectedNodes.notifyAll();
             }
         }
     }

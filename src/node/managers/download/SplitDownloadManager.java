@@ -55,7 +55,7 @@ public class SplitDownloadManager implements DownloadManager {
     }
 
     @Override
-    public void upload(Query query, ConnectionNode toNode) throws RemoteException {
+    public void upload(Query query, ConnectionNode toNode)  {
         byte bytes[] = new byte[numBytesChunk];
         // Get the query params
         HashMap<String, Object> paramas = query.parameters;
@@ -72,7 +72,7 @@ public class SplitDownloadManager implements DownloadManager {
             int size = fileInputStream.read(bytes, 0, numBytesChunk);
             DataChunk dataChunk = new DataChunk(hash, dataInfo.titles.get(0), (int)chunkNumber, size, bytes);
             // Send the chunk
-            toNode.send(dataChunk, connectionNode);
+           sendChunk(dataChunk, toNode);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -118,6 +118,22 @@ public class SplitDownloadManager implements DownloadManager {
         nodeManager.tmpFileToFile(hash, contentDataInfo.titles.get(0));
         // Remove the chunk queue of the content download
         pendingDownload.remove(hash);
+    }
+
+    private void sendQuery(Query query, ConnectionNode nodeToSend) {
+        try {
+            nodeToSend.send(query, connectionNode);
+        } catch (RemoteException e) {
+            nodeManager.forceRemoveConnection(nodeToSend);
+        }
+    }
+
+    private void sendChunk(DataChunk dataChunk, ConnectionNode nodeToSend) {
+        try {
+            nodeToSend.send(dataChunk, connectionNode);
+        } catch (RemoteException e) {
+            nodeManager.forceRemoveConnection(nodeToSend);
+        }
     }
 
     private void writeContent(String hash) {
