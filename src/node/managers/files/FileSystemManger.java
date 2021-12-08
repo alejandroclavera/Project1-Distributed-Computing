@@ -2,6 +2,7 @@ package node.managers.files;
 
 import common.DataChunk;
 import common.DataInfo;
+import node.NodeConfiguration;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -140,7 +141,7 @@ public class FileSystemManger implements FileManager{
         for (DataChunk dataChunk : dataChunks) {
             try {
                 RandomAccessFile randomAccessFile = new RandomAccessFile(new File(tmpFilePath), "rws");
-                randomAccessFile.seek(dataChunk.chunkNumber * (10000000)); // change
+                randomAccessFile.seek(dataChunk.chunkNumber * NodeConfiguration.numBytesChunk); // change
                 randomAccessFile.write(dataChunk.chunkBytes, 0, dataChunk.size);
                 randomAccessFile.close();
             } catch (FileNotFoundException e) {

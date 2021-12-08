@@ -1,6 +1,7 @@
 package node.managers.download;
 
 import common.*;
+import node.NodeConfiguration;
 import node.managers.NodeManager;
 
 import java.io.*;
@@ -12,17 +13,11 @@ public class SplitDownloadManager implements DownloadManager {
     private NodeManager nodeManager;
     private HashMap<String, List<DataChunk>> pendingDownload;
     private int chunckWindowSize = 50;
-    private int numBytesChunk = 10000000;
-
+    private int numBytesChunk = NodeConfiguration.numBytesChunk;
 
     public SplitDownloadManager(NodeManager nodeManager) {
         this.nodeManager = nodeManager;
         pendingDownload = new HashMap<>();
-    }
-
-    public SplitDownloadManager(NodeManager nodeManager, int numBytesChunk) {
-        this(nodeManager);
-        this.numBytesChunk = numBytesChunk;
     }
 
     @Override
