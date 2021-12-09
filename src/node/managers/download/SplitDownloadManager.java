@@ -5,7 +5,6 @@ import node.NodeConfiguration;
 import node.managers.NodeManager;
 
 import java.io.*;
-import java.lang.module.Configuration;
 import java.rmi.RemoteException;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -143,7 +142,7 @@ public class SplitDownloadManager implements DownloadManager {
             numberOfChunks += 1;
 
         // Create a Chunks Queue for the download of the content
-        pendingDownload.put(contentDataInfo.hash, new ArrayList<>());
+        pendingDownload.put(contentDataInfo.hash, new ArrayList<DataChunk>());
         List<DataChunk> chunckBytesList = pendingDownload.get(hash);
 
         // Split download
@@ -157,7 +156,7 @@ public class SplitDownloadManager implements DownloadManager {
             Query query = new Query(QueryType.DOWNLOAD, parameters, connectionNode);
             // Send the query
             nodeToSend.send(query);
-            if (numberOfChunks > 1 && (chunkNumber == 0  || (chunkNumber + 1) % chunkWindowSize != 0))
+            if (chunkNumber == 0  || (chunkNumber + 1) % chunkWindowSize != 0)
                 continue;
             // Wait for the arrival of all the window chunks
             synchronized (chunckBytesList) {

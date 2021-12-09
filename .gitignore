@@ -4,3 +4,4 @@ out
 contentsClient
 contents
 .DS_Store
+/target
