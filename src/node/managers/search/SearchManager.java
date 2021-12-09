@@ -11,7 +11,7 @@ import java.util.List;
 public interface SearchManager {
     void setConnectionNode(ConnectionNode connectionNode);
     HashMap<String, DataInfo> doSearch() throws RemoteException;
-    void search(Query query, ConnectionNode senderNode) throws RemoteException;
-    void processSearchResponse(Query searchResponse, ConnectionNode senderNode);
+    void search(Query query) throws RemoteException;
+    void processSearchResponse(Query searchResponse);
     HashMap<String, DataInfo> getSearchResults();
 }

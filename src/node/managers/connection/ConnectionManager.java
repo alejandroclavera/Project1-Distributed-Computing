@@ -10,7 +10,7 @@ public interface ConnectionManager {
     public boolean connect(String host);
     public boolean connect(String host, int port);
     public void forceRemoveConnection(ConnectionNode nodeToRemove);
-    public void processConnexion(Query connectionQuery, ConnectionNode senderNode);
-    public void notifyConnection(Query connectionResponse, ConnectionNode node);
+    public void processConnexion(Query connectionQuery);
+    public void notifyConnection(Query connectionResponse);
     public List<ConnectionNode> getConnectedNodesList();
 }

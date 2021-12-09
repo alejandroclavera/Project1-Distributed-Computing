@@ -37,12 +37,12 @@ public class SimpleConnection implements ConnectionManager {
             //Get the ConnectionNode object of the node to connect
             Registry registry = LocateRegistry.getRegistry(host, port);
             nodeToConnect = (ConnectionNode) registry.lookup("node");
-            Query connectionQuery = new Query(QueryType.CONNECTION, null);
+            Query connectionQuery = new Query(QueryType.CONNECTION, null, connectionNode);
             // Send the connection query
             synchronized (pendingNodes) {
                 pendingNodes.add(nodeToConnect);
             }
-            nodeToConnect.send(connectionQuery, connectionNode);
+            nodeToConnect.send(connectionQuery);
             synchronized (connectedNodes) {
                 while (!connectedNodes.contains(nodeToConnect) && connectedNodes.contains(connectionNode)) {
                     connectedNodes.wait();
@@ -67,7 +67,8 @@ public class SimpleConnection implements ConnectionManager {
     }
 
     @Override
-    public void processConnexion(Query connectionQuery, ConnectionNode senderNode) {
+    public void processConnexion(Query connectionQuery) {
+        ConnectionNode senderNode = connectionQuery.senderNode;
         HashMap<String, Object> parameters = new HashMap<>();
         QueryType responseType;
         if (connectionQuery.queryType != QueryType.CONNECTION) {
@@ -83,7 +84,7 @@ public class SimpleConnection implements ConnectionManager {
         }
         // Send the connection response
         try {
-            senderNode.send(new Query(responseType, parameters), connectionNode);
+            senderNode.send(new Query(responseType, parameters, connectionNode));
         } catch (RemoteException e) {
            // If a exception occurred remove the node of the list of connectedNodes
            synchronized (connectedNodes) {
@@ -94,7 +95,8 @@ public class SimpleConnection implements ConnectionManager {
     }
 
     @Override
-    public void notifyConnection(Query connectionResponse, ConnectionNode node) {
+    public void notifyConnection(Query connectionResponse) {
+        ConnectionNode node = connectionResponse.senderNode;
         synchronized (pendingNodes){
             if (connectionResponse.queryType == QueryType.CONNECTION_ACCEPTED) {
                 if (pendingNodes.contains(node)) {

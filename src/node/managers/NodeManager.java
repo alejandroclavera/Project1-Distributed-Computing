@@ -49,21 +49,21 @@ public class NodeManager {
 
     public void processQuery(Query query, ConnectionNode senderNode) throws RemoteException {
         if (query.queryType == QueryType.CONNECTION)
-            connectionManager.processConnexion(query, senderNode);
+            connectionManager.processConnexion(query);
         else if (query.queryType == QueryType.CONNECTION_ACCEPTED)
-            connectionManager.notifyConnection(query, senderNode);
+            connectionManager.notifyConnection(query);
         else if (query.queryType == QueryType.CONNECTION_REJECTED)
-            connectionManager.notifyConnection(query, senderNode);
+            connectionManager.notifyConnection(query);
         else if (query.queryType == QueryType.SEARCH)
-            searchManager.search(query, senderNode);
+            searchManager.search(query);
         else if (query.queryType == QueryType.SEARCH_RESPONSE)
-            searchManager.processSearchResponse(query, senderNode);
+            searchManager.processSearchResponse(query);
         else if (query.queryType == QueryType.DOWNLOAD)
-            downloadManager.upload(query, senderNode);
+            downloadManager.upload(query);
     }
 
-    public void receiveContent(DataChunk chunk, ConnectionNode sender) {
-        downloadManager.download(chunk, sender);
+    public void receiveContent(DataChunk chunk) {
+        downloadManager.download(chunk);
     }
 
     public HashMap<String, DataInfo> search() throws RemoteException {

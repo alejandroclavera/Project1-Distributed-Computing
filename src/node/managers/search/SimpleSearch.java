@@ -40,7 +40,7 @@ public class SimpleSearch implements SearchManager{
         nReci = 0;
         // Send the search query
         for (ConnectionNode node : nodesToSend)
-            node.send(new Query(QueryType.SEARCH, null), connectionNode);
+            node.send(new Query(QueryType.SEARCH, null, connectionNode));
         // Wait to all responses
         synchronized (currentSearchResults) {
             try {
@@ -54,19 +54,21 @@ public class SimpleSearch implements SearchManager{
     }
 
     @Override
-    public void search(Query query, ConnectionNode senderNode)  {
+    public void search(Query query)  {
+        ConnectionNode senderNode = query.senderNode;
         System.out.println("Procesando peticion de busqueda");
         HashMap<String, Object> queryParams = new HashMap<>();
         queryParams.put("contents", (ArrayList<DataInfo>)nodeManager.getContentsList());
         try {
-            senderNode.send(new Query(QueryType.SEARCH_RESPONSE, queryParams), connectionNode);
+            senderNode.send(new Query(QueryType.SEARCH_RESPONSE, queryParams, connectionNode));
         } catch (RemoteException e) {
             nodeManager.forceRemoveConnection(senderNode);
         }
     }
 
     @Override
-    public void processSearchResponse(Query searchResponse, ConnectionNode senderNode) {
+    public void processSearchResponse(Query searchResponse) {
+        ConnectionNode senderNode = searchResponse.senderNode;
         synchronized (currentSearchResults) {
             List<ConnectionNode> connectedNodes = nodeManager.getConnectedNodesList();
             if (connectedNodes.contains(senderNode)) {
