@@ -40,8 +40,8 @@ public class NodeConfiguration {
 
         // Change the configuration attributes
         contentDirectory = (String) jsonObject.get("contentDirectory");
-        numBytesChunk = (int)(long)jsonObject.get("numBytesChunk");
-        numMaxDownloadChunksThreads = (int)(long)jsonObject.get("numMaxDownloadChunksThreads");
-        numMaxUploadThreads = (int)(long)jsonObject.get("numMaxUploadThreads");
+        numBytesChunk = (int)(long) jsonObject.get("numBytesChunk");
+        numMaxDownloadChunksThreads = (int)(long) jsonObject.get("numMaxDownloadChunksThreads");
+        numMaxUploadThreads = (int)(long) jsonObject.get("numMaxUploadThreads");
     }
 }
