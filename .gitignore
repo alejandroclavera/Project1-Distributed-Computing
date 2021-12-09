@@ -1,7 +1,8 @@
 .idea
-src/test
+src/main/test
 out
 contentsClient
 contents
+configurations
 .DS_Store
 /target
