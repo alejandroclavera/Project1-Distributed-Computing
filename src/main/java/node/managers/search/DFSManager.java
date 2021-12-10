@@ -110,10 +110,8 @@ public class DFSManager implements SearchManager {
         ConnectionNode topQueryNode = (ConnectionNode) searchResponse.parameters.get("topQuery");
         int depthResponse = (int) searchResponse.parameters.get("depth");
         if(depthResponse == 1) {
-            System.out.println("Last Response");
             mySearchQueryReponse = searchResponse;
         } else {
-            System.out.println("Response");
             lastResponseQuery.put(topQueryNode, searchResponse);
         }
         // Notify the respond it is avadible
@@ -138,7 +136,8 @@ public class DFSManager implements SearchManager {
             if (askedNodes.contains(nodeToSend))
                 continue;
             askedNodes.add(nodeToSend);
-            nodeToSend.send(query);
+            if (!sendQuery(query, nodeToSend))
+                continue;
 
             // Wait to the node response
             synchronized (objectToNotify) {
@@ -180,6 +179,15 @@ public class DFSManager implements SearchManager {
                 searchResult.put(newDataInfo.hash, newDataInfo);
             }
         }
+    }
+
+    private boolean sendQuery(Query query, ConnectionNode nodeToSend) {
+        try {
+            nodeToSend.send(query);
+        } catch (RemoteException e) {
+            return false;
+        }
+        return true;
     }
 
     private List<DataInfo> filterBy(HashMap<String, String> filterBy) {

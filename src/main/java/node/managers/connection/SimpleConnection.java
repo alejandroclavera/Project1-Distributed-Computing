@@ -80,7 +80,6 @@ public class SimpleConnection implements ConnectionManager {
             synchronized (connectedNodes) {
                 connectedNodes.add(senderNode);
             }
-            System.out.println("CONNECTION ACCEPTED");
         }
         // Send the connection response
         try {

@@ -87,8 +87,8 @@ public class FileSystemManger implements FileManager{
                     JSONObject dataInfoJson = (JSONObject) dataInfoList.get(index);
                     long size = (long) dataInfoJson.get("size");
                     HashMap<String, String> metadata = (HashMap<String, String>) dataInfoJson.get("metadata");
-                    dataInfo = new DataInfo(hash, size, metadata);
                     hash = hashList.get(index);
+                    dataInfo = new DataInfo(hash, size, metadata);
                     dataInfo.titles.add(contentName);
                 } else {
                     // Generate new data info if the content is new
