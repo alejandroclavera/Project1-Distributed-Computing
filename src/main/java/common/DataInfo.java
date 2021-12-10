@@ -1,5 +1,7 @@
 package common;
 
+import org.json.simple.JSONObject;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -9,14 +11,14 @@ public class DataInfo implements Serializable {
     public final String hash;
     public List<String> titles;
     public final long size;
-    public final HashMap<String, ? extends Serializable> metadata;
+    public final HashMap<String, Object> metadata;
     public List<ConnectionNode> providers;
 
-    public DataInfo(String hash, HashMap<String, ? extends Serializable> metadata) {
+    public DataInfo(String hash, HashMap<String, Object> metadata) {
        this(hash, 0, metadata);
     }
 
-    public DataInfo(String hash, long size, HashMap<String, ? extends Serializable> metadata) {
+    public DataInfo(String hash, long size, HashMap<String, Object> metadata) {
         this.hash = hash;
         this.titles = new ArrayList<>();
         this.metadata = metadata;
@@ -31,5 +33,16 @@ public class DataInfo implements Serializable {
                 ", title='" + titles + '\'' +
                 ", metadata=" + metadata +
                 '}' + '\n';
+    }
+
+    public JSONObject toJson() {
+        JSONObject dataInfoJson = new JSONObject();
+
+        dataInfoJson.put("hash", hash);
+        dataInfoJson.put("title", titles);
+        dataInfoJson.put("size", size);
+        dataInfoJson.put("metadata", metadata);
+
+        return dataInfoJson;
     }
 }
