@@ -1,6 +1,8 @@
 package node.managers.files;
 
+import common.DataChunk;
 import common.DataInfo;
+import node.NodeConfiguration;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -65,8 +67,6 @@ public class FileSystemManger implements FileManager{
         }
     }
 
-
-
     @Override
     public List<DataInfo> getContentsList() {
         return new ArrayList<>(contentsMap.values());
@@ -102,18 +102,68 @@ public class FileSystemManger implements FileManager{
         }
     }
 
-    @Override
-    public void addNewContent(String name, List<byte[]> bytes) {
+
+    public void addNewContent(String name, DataChunk dataChunk) {
+        byte allBytes[] = dataChunk.chunkBytes;
         String contentPath = Paths.get(contentsDirectoryPath, name).toString();
         try {
             FileOutputStream fileOutputStream = new FileOutputStream(contentPath);
-            for (byte[] newbyte : bytes) {
-                fileOutputStream.write(newbyte);
+            fileOutputStream.write(allBytes);
+            fileOutputStream.close();
+            // Add to the hashmap (TODO)
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void addNewContent(String name, List<DataChunk> dataChunks) {
+        String contentPath = Paths.get(contentsDirectoryPath, name).toString();
+        try {
+            FileOutputStream fileOutputStream = new FileOutputStream(contentPath);
+            for (DataChunk dataChunk:  dataChunks) {
+                fileOutputStream.write(dataChunk.chunkBytes, 0, dataChunk.size);
             }
             fileOutputStream.close();
             // Add to the hashmap (TODO)
         } catch (FileNotFoundException e) {
             e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void writeInTemporalFile(String hash, List<DataChunk> dataChunks) {
+        String tmpFilePath = Paths.get(contentsDirectoryPath, hash.substring(0,50)).toString() + ".tmp";
+        for (DataChunk dataChunk : dataChunks) {
+            try {
+                RandomAccessFile randomAccessFile = new RandomAccessFile(new File(tmpFilePath), "rws");
+                randomAccessFile.seek(dataChunk.chunkNumber * NodeConfiguration.numBytesChunk); // change
+                randomAccessFile.write(dataChunk.chunkBytes, 0, dataChunk.size);
+                randomAccessFile.close();
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public void temporalToFile(String hash, String fileName) {
+        String tmpFilePath = Paths.get(contentsDirectoryPath, hash.substring(0,50)).toString() + ".tmp";
+        String contentFilePath = Paths.get(contentsDirectoryPath, fileName).toString();
+        File tmpFile = new File(tmpFilePath);
+        File contentFile = new File(contentFilePath);
+        tmpFile.renameTo(contentFile);
+        try {
+            long size = Files.size(Paths.get(contentFilePath));
+            DataInfo dataInfo = new DataInfo(hash, size, null);
+            dataInfo.titles.add(fileName);
+            contentsMap.put(hash, dataInfo);
         } catch (IOException e) {
             e.printStackTrace();
         }

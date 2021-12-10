@@ -4,15 +4,13 @@ import common.*;
 import node.managers.connection.ConnectionManager;
 import node.managers.connection.SimpleConnection;
 import node.managers.download.DownloadManager;
-import node.managers.download.SimpleDownloadManger;
 import node.managers.download.SplitDownloadManager;
 import node.managers.files.FileManager;
 import node.managers.search.DFSManager;
 import node.managers.search.SearchManager;
-import node.managers.search.SimpleSearch;
+
 
 import java.io.FileInputStream;
-import java.io.Serializable;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,33 +39,32 @@ public class NodeManager {
         downloadManager.setConnectionNode(connectionNode);
     }
 
-    public void connectTo(String host) {
-        connectionManager.connect(host);
+    public boolean connectTo(String host) {
+        return connectionManager.connect(host);
     }
 
-    public void connectTo(String host, int port) {
-        connectionManager.connect(host, port);
+    public boolean connectTo(String host, int port) {
+        return connectionManager.connect(host, port);
     }
 
     public void processQuery(Query query, ConnectionNode senderNode) throws RemoteException {
         if (query.queryType == QueryType.CONNECTION)
-            connectionManager.processConnexion(query, senderNode);
+            connectionManager.processConnexion(query);
         else if (query.queryType == QueryType.CONNECTION_ACCEPTED)
-            connectionManager.notifyConnection(query, senderNode);
+            connectionManager.notifyConnection(query);
         else if (query.queryType == QueryType.CONNECTION_REJECTED)
-            connectionManager.notifyConnection(query, senderNode);
+            connectionManager.notifyConnection(query);
         else if (query.queryType == QueryType.SEARCH)
-            searchManager.search(query, senderNode);
+            searchManager.search(query);
         else if (query.queryType == QueryType.SEARCH_RESPONSE)
-            searchManager.processSearchResponse(query, senderNode);
+            searchManager.processSearchResponse(query);
         else if (query.queryType == QueryType.DOWNLOAD)
-            downloadManager.upload(query, senderNode);
+            downloadManager.upload(query);
     }
 
-    public void receiveContent(DataChunk chunk, ConnectionNode sender) {
-        downloadManager.download(chunk, sender);
+    public void receiveContent(DataChunk chunk) {
+        downloadManager.download(chunk);
     }
-
 
     public HashMap<String, DataInfo> search() throws RemoteException {
         return searchManager.doSearch();
@@ -85,6 +82,11 @@ public class NodeManager {
     //***********************************************************************
     // * METHODS THAT ALLOW THE INTERACTION BETWEEN THE DIFERENTS MANGAGERS *
     //***********************************************************************
+
+    public void forceRemoveConnection(ConnectionNode nodeToRemove) {
+        connectionManager.forceRemoveConnection(nodeToRemove);
+    }
+
     public FileInputStream getContent(String hash) {
         return fileManager.getContent(hash);
     }
@@ -93,8 +95,16 @@ public class NodeManager {
         fileManager.addNewContent(name, bytes);
     }
 
-    public void addNewContent(String name, List<byte[]> bytesList) {
-        fileManager.addNewContent(name, bytesList);
+    public void addNewContent(String name, List<DataChunk> dataChunkList) {
+        fileManager.addNewContent(name, dataChunkList);
+    }
+
+    public void addContentsBytesToTMPFile(String hash, List<DataChunk> dataChunks) {
+        fileManager.writeInTemporalFile(hash, dataChunks);
+    }
+
+    public void tmpFileToFile(String hash, String contentFileName) {
+        fileManager.temporalToFile(hash, contentFileName);
     }
 
     public List<ConnectionNode> getProviders(String hash) {

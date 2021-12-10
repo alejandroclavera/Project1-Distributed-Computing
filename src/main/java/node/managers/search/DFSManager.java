@@ -39,11 +39,11 @@ public class DFSManager implements SearchManager {
         params.put("askedNodes", askedNodes);
         params.put("topQuery", connectionNode);
         params.put("depth", 0);
-        // add the node that init the query to the list of the askedNodes(to avoid loops)
+        // Add the node that init the query to the list of the askedNodes(to avoid loops)
         askedNodes.add(connectionNode);
 
         // Send the search query to the nodes that the current node it is connected
-        dataInfoList = searchToNextLevel(new Query(QueryType.SEARCH, params), true);
+        dataInfoList = searchToNextLevel(new Query(QueryType.SEARCH, params, connectionNode), true);
 
         // update the dataInfo
         updateDataInfo(dataInfoList);
@@ -51,17 +51,18 @@ public class DFSManager implements SearchManager {
     }
 
     @Override
-    public void search(Query query, ConnectionNode senderNode) throws RemoteException {
+    public void search(Query query) throws RemoteException {
+        ConnectionNode senderNode = query.senderNode;
+        List<DataInfo> dataInfoReceived;
         ConnectionNode topSearchNode = (ConnectionNode) query.parameters.get("topQuery");
         List<ConnectionNode> askedNodes = (List<ConnectionNode>) query.parameters.get("askedNodes");
-        Object myNotifyObject = new Object();
-        List<DataInfo> dataInfoReceived = new ArrayList<>();
+        Query nextQuery = new Query(QueryType.SEARCH, query.parameters, connectionNode);
         int depth = (int) query.parameters.get("depth") + 1;
 
-        // Update the
-        query.parameters.replace("depth", depth);
-        // Propagate the query to the node of the next levels
-        dataInfoReceived = searchToNextLevel(query, false);
+        // Update the depth param
+        nextQuery.parameters.replace("depth", depth);
+        // Propagate the query to the nodes of the next levels
+        dataInfoReceived = searchToNextLevel(nextQuery, false);
 
         // Add the contents node to the explored contentsList
         List<DataInfo> myDataInfos = nodeManager.getContentsList();
@@ -75,11 +76,11 @@ public class DFSManager implements SearchManager {
         params.put("depth", query.parameters.get("depth"));
         params.put("askedNodes", askedNodes);
         params.put("partialDataInfo", dataInfoReceived);
-        senderNode.send(new Query(QueryType.SEARCH_RESPONSE, params), connectionNode);
+        senderNode.send(new Query(QueryType.SEARCH_RESPONSE, params, connectionNode));
     }
 
     @Override
-    public void processSearchResponse(Query searchResponse, ConnectionNode senderNode) {
+    public void processSearchResponse(Query searchResponse) {
         ConnectionNode topQueryNode = (ConnectionNode) searchResponse.parameters.get("topQuery");
         int depthResponse = (int) searchResponse.parameters.get("depth");
         if(depthResponse == 1) {
@@ -106,13 +107,12 @@ public class DFSManager implements SearchManager {
         ConnectionNode topSearchNode = (ConnectionNode) query.parameters.get("topQuery");
         List<ConnectionNode> askedNodes = (List<ConnectionNode>) query.parameters.get("askedNodes");
         List<DataInfo> dataInfoReceived = new ArrayList<>();
-
         // // Send the search query to the nodes that the current node it is connected foreach node wait its response
         for (ConnectionNode nodeToSend : nodeManager.getConnectedNodesList()) {
             if (askedNodes.contains(nodeToSend))
                 continue;
             askedNodes.add(nodeToSend);
-            nodeToSend.send(query, connectionNode);
+            nodeToSend.send(query);
 
             // Wait to the node response
             synchronized (objectToNotify) {

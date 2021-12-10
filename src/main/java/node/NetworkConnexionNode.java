@@ -16,12 +16,12 @@ public class NetworkConnexionNode extends UnicastRemoteObject implements Connect
     }
 
     @Override
-    public void send(Query query, ConnectionNode senderNode) throws RemoteException {
-        nodeManager.processQuery(query, senderNode);
+    public void send(Query query) throws RemoteException {
+        nodeManager.processQuery(query, null);
     }
 
     @Override
-    public void send(DataChunk dataChunk, ConnectionNode senderNode) {
-        nodeManager.receiveContent(dataChunk, senderNode);
+    public void send(DataChunk dataChunk) {
+        nodeManager.receiveContent(dataChunk);
     }
 }
