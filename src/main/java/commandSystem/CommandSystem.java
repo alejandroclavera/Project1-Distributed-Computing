@@ -1,8 +1,9 @@
-package node;
+package commandSystem;
 
 
 import common.ConnectionNode;
 import common.DataInfo;
+import node.Node;
 import node.managers.NodeManager;
 
 import java.util.HashMap;
