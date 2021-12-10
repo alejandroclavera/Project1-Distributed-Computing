@@ -28,6 +28,7 @@ public class Node {
         registryNode();
 
     }
+
     public Node(int port) throws RemoteException, AlreadyBoundException {
         this.fileManager = new FileSystemManger("contentsClient");
         this.nodeManager = new NodeManager(this.fileManager);
@@ -42,16 +43,20 @@ public class Node {
     public void download(String hash){
         nodeManager.downloadContent(hash);
     }
+
     public void connectTo(String host, int port){
         nodeManager.connectTo(host, port);
     }
+
     public void connectTo(String host){
         nodeManager.connectTo(host);
     }
+
     private void registryNode() throws RemoteException, AlreadyBoundException {
         Registry registry = startRegistry(this.port);
         registry.bind("node", connectionNode);
     }
+
     private Registry startRegistry(Integer port) throws RemoteException {
         try {
             if (port == null)

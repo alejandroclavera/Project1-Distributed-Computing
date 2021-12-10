@@ -71,6 +71,10 @@ public class NodeManager {
     }
 
 
+    public HashMap<String, DataInfo> search(HashMap<String, String> filterBy) throws RemoteException {
+        return searchManager.doSearch(filterBy);
+    }
+
     public void downloadContent(String hash) {
         try {
             downloadManager.download(hash);

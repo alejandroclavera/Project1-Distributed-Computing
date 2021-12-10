@@ -86,15 +86,15 @@ public class FileSystemManger implements FileManager{
                     // Get the information of the dataInfo stored in the json file
                     JSONObject dataInfoJson = (JSONObject) dataInfoList.get(index);
                     long size = (long) dataInfoJson.get("size");
-                    HashMap<String, Object> metadata = (HashMap<String, Object>) dataInfoJson.get("metadata");
+                    HashMap<String, String> metadata = (HashMap<String, String>) dataInfoJson.get("metadata");
                     dataInfo = new DataInfo(hash, size, metadata);
                     hash = hashList.get(index);
+                    dataInfo.titles.add(contentName);
                 } else {
                     // Generate new data info if the content is new
                     hash = getHash(path.toString());
                     long size = 0;
-                    HashMap<String, Object> metadata = null;
-
+                    HashMap<String, String> metadata = null;
                     // check if the is renamed
                     if (hashList.contains(hash)) {
                         int index = hashList.indexOf(hash);
@@ -102,7 +102,7 @@ public class FileSystemManger implements FileManager{
                         size = (long) dataInfoJson.get("size");
                         nameList.remove(index);
                         nameList.add(index, contentName);
-                        metadata = (HashMap<String, Object>) dataInfoJson.get("metadata");
+                        metadata = (HashMap<String, String>) dataInfoJson.get("metadata");
                     } else {
                         size = Files.size(Paths.get(contentsDirectoryPath, contentName));
                         nameList.add(contentName);

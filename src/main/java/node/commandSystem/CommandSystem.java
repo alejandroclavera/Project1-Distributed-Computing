@@ -1,13 +1,10 @@
-package commandSystem;
+package node.commandSystem;
 
 
-import common.ConnectionNode;
 import common.DataInfo;
 import node.Node;
-import node.managers.NodeManager;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Scanner;
 
 

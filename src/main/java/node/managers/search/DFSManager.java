@@ -51,6 +51,25 @@ public class DFSManager implements SearchManager {
     }
 
     @Override
+    public HashMap<String, DataInfo> doSearch(HashMap<String, String> filterBy) throws RemoteException {
+        HashMap<String, Object> params = new HashMap<>();
+        List<ConnectionNode> askedNodes = new ArrayList<>();
+        List<DataInfo> dataInfoList;
+
+        // Set the query params
+        params.put("filterBy", filterBy);
+        params.put("askedNodes", askedNodes);
+        params.put("topQuery", connectionNode);
+        params.put("depth", 0);
+        // Add the node that init the query to the list of the askedNodes(to avoid loops)
+        askedNodes.add(connectionNode);
+
+        // Send the search query to the nodes that the current node it is connected
+        dataInfoList = searchToNextLevel(new Query(QueryType.SEARCH, params, connectionNode), true);
+        return generateMap(dataInfoList);
+    }
+
+    @Override
     public void search(Query query) throws RemoteException {
         ConnectionNode senderNode = query.senderNode;
         List<DataInfo> dataInfoReceived;
@@ -65,7 +84,14 @@ public class DFSManager implements SearchManager {
         dataInfoReceived = searchToNextLevel(nextQuery, false);
 
         // Add the contents node to the explored contentsList
-        List<DataInfo> myDataInfos = nodeManager.getContentsList();
+        List<DataInfo> myDataInfos = null;
+        if (query.parameters.containsKey("filterBy"))
+            // In the case the query params contain filterBy, filtering the dataInfo to send
+            myDataInfos = filterBy((HashMap<String, String>) query.parameters.get("filterBy"));
+        else
+            myDataInfos = nodeManager.getContentsList();
+
+        // Update data info to send
         for(DataInfo dataInfo : myDataInfos)
             dataInfo.providers.add(connectionNode);
         dataInfoReceived.addAll(myDataInfos);
@@ -154,5 +180,40 @@ public class DFSManager implements SearchManager {
                 searchResult.put(newDataInfo.hash, newDataInfo);
             }
         }
+    }
+
+    private List<DataInfo> filterBy(HashMap<String, String> filterBy) {
+        List<DataInfo> myDataInfos = nodeManager.getContentsList();
+        List<DataInfo> filteredDataInfo = new ArrayList<>();
+        // Filtering by the keywords of the method param
+        for (DataInfo myContentDataInfo : myDataInfos) {
+            HashMap<String, String> contentMetadata = myContentDataInfo.metadata;
+            boolean passFilter = false;
+            for (String keyword : filterBy.keySet()) {
+                if (contentMetadata.containsKey(keyword)) {
+                    Object value = contentMetadata.get(keyword);
+                    Object expectedValue = filterBy.get(keyword);
+                    passFilter = (value.equals(expectedValue))? true : passFilter;
+                }
+            }
+            // Add to the list if pass the filter
+            if (passFilter)
+                filteredDataInfo.add(myContentDataInfo);
+        }
+        return filteredDataInfo;
+    }
+
+    private HashMap<String, DataInfo> generateMap(List<DataInfo> dataInfos) {
+        HashMap<String, DataInfo> map = new HashMap<>();
+        for (DataInfo newDataInfo : dataInfos) {
+            if (map.containsKey(newDataInfo.hash)) {
+                DataInfo dataInfo = searchResult.get(newDataInfo.hash);
+                dataInfo.providers.addAll(newDataInfo.providers);
+                dataInfo.titles.addAll(newDataInfo.titles);
+            } else {
+                map.put(newDataInfo.hash, newDataInfo);
+            }
+        }
+        return map;
     }
 }

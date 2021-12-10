@@ -4,6 +4,7 @@ import common.ConnectionNode;
 import common.DataInfo;
 import common.Query;
 import common.QueryType;
+import jdk.jshell.spi.ExecutionControl;
 import node.managers.NodeManager;
 
 import java.io.Serializable;
@@ -50,6 +51,11 @@ public class SimpleSearch implements SearchManager{
                 e.printStackTrace();
             }
         }
+        return new HashMap<>(currentSearchResults);
+    }
+
+    @Override
+    public HashMap<String, DataInfo> doSearch(HashMap<String, String> filterBy) throws RemoteException {
         return new HashMap<>(currentSearchResults);
     }
 
