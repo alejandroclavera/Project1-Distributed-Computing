@@ -14,6 +14,7 @@ public class LogSystem {
             logger = Logger.getLogger("nodeLogs");
             FileHandler fhandler = new FileHandler("logs/nodeLogs.log");
             logger.addHandler(fhandler);
+            logger.setUseParentHandlers(false);
             SimpleFormatter formatter = new SimpleFormatter();
             fhandler.setFormatter(formatter);
         } catch (SecurityException e){

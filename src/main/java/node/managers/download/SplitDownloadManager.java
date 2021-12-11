@@ -15,6 +15,7 @@ public class SplitDownloadManager implements DownloadManager {
     private ConnectionNode connectionNode;
     private NodeManager nodeManager;
     private HashMap<String, List<DataChunk>> pendingDownload;
+    private HashMap<String, DownloadStatus> downloadStatus;
     private int chunkWindowSize = 50;
     private int numBytesChunk = NodeConfiguration.numBytesChunk;
     // Thread control attributes
@@ -26,6 +27,7 @@ public class SplitDownloadManager implements DownloadManager {
     public SplitDownloadManager(NodeManager nodeManager) {
         this.nodeManager = nodeManager;
         pendingDownload = new HashMap<>();
+        downloadStatus = new HashMap<>();
     }
 
     @Override
@@ -40,6 +42,7 @@ public class SplitDownloadManager implements DownloadManager {
         // Download the content if the content have a providers
         if (providers.size() != 0) {
             downLoadProcess(contentDataInfo, providers);
+            LogSystem.logInfoMessage("Download completed");
         }
     }
 
@@ -51,8 +54,6 @@ public class SplitDownloadManager implements DownloadManager {
            if (nThreadsDownload < NodeConfiguration.numMaxDownloadChunksThreads) {
                 nextDataChunk = downloadQueue.poll();
                 nThreadsDownload +=1;
-           } else {
-               System.out.println("ignoro");
            }
        }
 
@@ -98,11 +99,13 @@ public class SplitDownloadManager implements DownloadManager {
         String hash = dataChunk.hash;
         List<DataChunk> dataChunks = pendingDownload.get(hash);
         DataInfo contentDataInfo = nodeManager.getDataInfo(dataChunk.hash);
+        DownloadStatus status = downloadStatus.get(hash);
         synchronized (dataChunks) {
             // Add the new dataChunk to the list
-            dataChunks.add((int)dataChunk.chunkNumber % chunkWindowSize, dataChunk);
+            dataChunks.add(dataChunk);
+            status.numChunksDownloaded += 1;
             // If all the window fragments are in the queue, are written to a temporary file
-            if ((dataChunks.size() - 1)  % chunkWindowSize == 0 || dataChunk.size == contentDataInfo.size) {
+            if ((dataChunks.size() - 1)  % chunkWindowSize == 0 || status.numWindow == status.maxWindows) {
                 writeContent(hash);
                 // Clean the dataChunks of the windows
                 dataChunks.clear();
@@ -145,11 +148,14 @@ public class SplitDownloadManager implements DownloadManager {
 
         // Create a Chunks Queue for the download of the content
         pendingDownload.put(contentDataInfo.hash, new ArrayList<DataChunk>());
+        downloadStatus.put(hash, new DownloadStatus((int) numberOfChunks, chunkWindowSize));
+        DownloadStatus status = downloadStatus.get(hash);
         List<DataChunk> chunckBytesList = pendingDownload.get(hash);
         // The first one is null to prevent the process ending before the chunks arrive
         chunckBytesList.add(null);
 
         // Split download
+        boolean allCompletedWindow = true;
         for (long chunkNumber = 0; chunkNumber < numberOfChunks; chunkNumber++) {
             // Select the next provider (cyclic way)
             ConnectionNode nodeToSend = providers.get((int)(chunkNumber % providers.size()));
@@ -159,23 +165,19 @@ public class SplitDownloadManager implements DownloadManager {
             parameters.put("chunkNumber", String.valueOf(chunkNumber));
             Query query = new Query(QueryType.DOWNLOAD, parameters, connectionNode);
             // Send the query
-            nodeToSend.send(query);
-            if (chunkNumber == 0  || (chunkNumber + 1) % chunkWindowSize != 0)
+            sendQuery(query, nodeToSend);
+            if ((chunkNumber == 0  || (chunkNumber + 1) % chunkWindowSize != 0) && chunkNumber != numberOfChunks - 1)
                 continue;
             // Wait for the arrival of all the window chunks
-            synchronized (chunckBytesList) {
-                while (chunckBytesList.size() > 0) {
-                    try {
-                        chunckBytesList.wait();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
+            allCompletedWindow &= waitWindowChunk(chunckBytesList);
+            if (!allCompletedWindow)
+                return;
+
             chunckBytesList.add(null);
+            status.numWindow += 1;
         }
         // Write the last fragments if the number of fragments is less than the size of the windows
-        writeContent(hash);
+        //writeContent(hash);
         nodeManager.tmpFileToFile(hash, contentDataInfo.titles.get(0));
         // Remove the chunk queue of the content download
         pendingDownload.remove(hash);
@@ -197,10 +199,51 @@ public class SplitDownloadManager implements DownloadManager {
         }
     }
 
+
+    private boolean waitWindowChunk(List<DataChunk> windowChunks) {
+        synchronized (windowChunks) {
+            int trys = 0;
+            if (windowChunks.size() > 0) {
+                while (trys < 3 && windowChunks.size() > 0) {
+                    try {
+                        windowChunks.wait(1);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    trys += 1;
+                }
+                if (windowChunks.size() > 0 ) {
+                    LogSystem.logErrorMessage("max num of try of window");
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     private void writeContent(String hash) {
         List<DataChunk> chunkList = pendingDownload.get(hash);
         // Remove the first because it is null
         chunkList.remove(null);
         nodeManager.addContentsBytesToTMPFile(hash, chunkList);
+    }
+}
+
+class DownloadStatus {
+    int numWindow;
+    int maxWindows;
+    int numChunksDownloaded;
+    int maxChunks;
+
+    public DownloadStatus(int numChunks, int windowsSize) {
+        this.numWindow = 1;
+        this.maxWindows = numChunks / windowsSize + ((numChunks % windowsSize == 0) ? 0 : 1);
+        this.numChunksDownloaded = 0;
+        this.maxChunks = numChunks;
+    }
+
+    @Override
+    public String toString() {
+        return numChunksDownloaded + " / " + maxChunks;
     }
 }

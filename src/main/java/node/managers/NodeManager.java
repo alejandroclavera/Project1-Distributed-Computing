@@ -126,12 +126,15 @@ public class NodeManager {
 
     public DataInfo getDataInfo(String hash) {
         List<DataInfo> dataInfos = getContentsList();
+        if (searchManager.getSearchResults().containsKey(hash))
+            return searchManager.getSearchResults().get(hash);
+
         for(DataInfo dataInfo : dataInfos) {
             if (dataInfo.hash.equals(hash)) {
                 return dataInfo;
             }
         }
-        return searchManager.getSearchResults().get(hash);
+        return null;
     }
 
 }
