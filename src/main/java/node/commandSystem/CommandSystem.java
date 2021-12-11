@@ -69,7 +69,7 @@ public class CommandSystem {
             } else if (command.equals("filterSearch")) {
                 filteredSearch();
             }else if(command.equals("download")){
-                node.download(arguments[1]);
+                downloadCommand();
             }else if(command.equals("exit")) {
                 exit = true;
             } else {
@@ -124,6 +124,21 @@ public class CommandSystem {
         } catch (RemoteException e) {
             errorMessage("in the search");
         }
+    }
+
+    private void downloadCommand() {
+        Scanner scanner = new Scanner(System.in);
+        int indexOption = -1;
+        printOptions();
+        while (indexOption < 0 || indexOption > options.size()) {
+            System.out.print("Select the content index: ");
+            indexOption = scanner.nextInt();
+            if (indexOption < 0 || indexOption > options.size())  {
+                errorMessage("bad index \"" + indexOption + "\"");
+            }
+        }
+        String hash = options.get(indexOption).hash;
+        node.download(hash);
     }
 
     private void errorMessage(String message) {

@@ -2,7 +2,9 @@ package node.managers.download;
 
 import common.*;
 import node.NodeConfiguration;
+import node.logs.LogSystem;
 import node.managers.NodeManager;
+
 
 import java.io.*;
 import java.rmi.RemoteException;
@@ -100,13 +102,7 @@ public class SplitDownloadManager implements DownloadManager {
             // Add the new dataChunk to the list
             dataChunks.add((int)dataChunk.chunkNumber % chunkWindowSize, dataChunk);
             // If all the window fragments are in the queue, are written to a temporary file
-            if ((dataChunks.size() - 1 != 0 && ((dataChunks.size() - 1)  % chunkWindowSize) == 0)  ) {
-                writeContent(hash);
-                // Clean the dataChunks of the windows
-                dataChunks.clear();
-                // Notifies to the download process to continue with the next chunks window
-                dataChunks.notifyAll();
-            } else if (dataChunk.size == contentDataInfo.size) {
+            if ((dataChunks.size() - 1)  % chunkWindowSize == 0 || dataChunk.size == contentDataInfo.size) {
                 writeContent(hash);
                 // Clean the dataChunks of the windows
                 dataChunks.clear();
@@ -136,7 +132,7 @@ public class SplitDownloadManager implements DownloadManager {
             // Send the chunk
             sendChunk(dataChunk, toNode);
         } catch (IOException e) {
-            e.printStackTrace();
+           LogSystem.logErrorMessage("Can't read chunk");
         }
     }
 

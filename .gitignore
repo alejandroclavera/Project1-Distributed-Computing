@@ -4,5 +4,6 @@ out
 contentsClient
 contents
 configurations
+logs
 .DS_Store
 /target

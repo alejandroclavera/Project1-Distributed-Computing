@@ -2,6 +2,7 @@ package node;
 
 import common.ConnectionNode;
 import common.DataInfo;
+import node.logs.LogSystem;
 import node.managers.NodeManager;
 import node.managers.files.FileManager;
 import node.managers.files.FileSystemManger;
@@ -84,9 +85,9 @@ public class Node {
             return registry;
         } catch (RemoteException ex) {
             // No valid registry at that port.
-            System.out.println("RMI registry cannot be located ");
+            LogSystem.logInfoMessage("RMI registry cannot be located ");
             Registry registry = LocateRegistry.createRegistry(port);
-            System.out.println("RMI registry created at port ");
+            LogSystem.logInfoMessage("RMI registry created at port ");
             return registry;
         }
     }

@@ -4,10 +4,12 @@ import common.ConnectionNode;
 import common.DataInfo;
 import common.Query;
 import common.QueryType;
+import node.logs.LogSystem;
 import node.managers.NodeManager;
 
 import java.rmi.RemoteException;
 import java.util.*;
+import java.util.logging.Logger;
 
 public class DFSManager implements SearchManager {
     private ConnectionNode connectionNode;
@@ -183,8 +185,11 @@ public class DFSManager implements SearchManager {
 
     private boolean sendQuery(Query query, ConnectionNode nodeToSend) {
         try {
+            LogSystem.logInfoMessage("Send query search to the next node");
             nodeToSend.send(query);
         } catch (RemoteException e) {
+            LogSystem.logErrorMessage("Can't send the query");
+            nodeManager.forceRemoveConnection(nodeToSend);
             return false;
         }
         return true;

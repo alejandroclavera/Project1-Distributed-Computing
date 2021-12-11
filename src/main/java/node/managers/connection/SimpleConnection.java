@@ -4,6 +4,7 @@ package node.managers.connection;
 import common.ConnectionNode;
 import common.Query;
 import common.QueryType;
+import node.logs.LogSystem;
 
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -43,6 +44,7 @@ public class SimpleConnection implements ConnectionManager {
                 pendingNodes.add(nodeToConnect);
             }
             nodeToConnect.send(connectionQuery);
+            LogSystem.logInfoMessage("Send the connection query");
             synchronized (connectedNodes) {
                 while (!connectedNodes.contains(nodeToConnect) && connectedNodes.contains(connectionNode)) {
                     connectedNodes.wait();
@@ -51,10 +53,12 @@ public class SimpleConnection implements ConnectionManager {
         } catch (RemoteException e) {
             if (nodeToConnect != null)
                 pendingNodes.remove(nodeToConnect);
+            LogSystem.logErrorMessage("Connection  refused accepted");
             return false;
         } catch (NotBoundException | InterruptedException e ) {
             return false;
         }
+        LogSystem.logInfoMessage("Connection accepted");
         return true;
     }
 
@@ -71,25 +75,30 @@ public class SimpleConnection implements ConnectionManager {
         ConnectionNode senderNode = connectionQuery.senderNode;
         HashMap<String, Object> parameters = new HashMap<>();
         QueryType responseType;
+        LogSystem.logInfoMessage("Arrived a new connection query");
         if (connectionQuery.queryType != QueryType.CONNECTION) {
             responseType = QueryType .CONNECTION_REJECTED;
             parameters.put("message", "Error queryType must be CONNECTION");
+            LogSystem.logInfoMessage("Reject the connection query (bad queryType)");
         } else {
             responseType = QueryType.CONNECTION_ACCEPTED;
             parameters.put("message", "Connection accepted");
             synchronized (connectedNodes) {
                 connectedNodes.add(senderNode);
             }
+            LogSystem.logInfoMessage("The connection query accept");
         }
         // Send the connection response
         try {
+            LogSystem.logInfoMessage("Send connection query response");
             senderNode.send(new Query(responseType, parameters, connectionNode));
         } catch (RemoteException e) {
            // If a exception occurred remove the node of the list of connectedNodes
-           synchronized (connectedNodes) {
+            LogSystem.logErrorMessage("Error when send the query response");
+            synchronized (connectedNodes) {
                if (connectedNodes.contains(senderNode))
                    connectedNodes.remove(senderNode);
-           }
+            }
         }
     }
 

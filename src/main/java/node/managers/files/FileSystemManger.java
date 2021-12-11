@@ -75,9 +75,9 @@ public class FileSystemManger implements FileManager{
         DataInfo dataInfo = null;
         String hash = null;
         for (String contentName : contentsDirectory.list()) {
-            if (contentName.equals("contents.json")) {
+            // Ignore the contents.json
+            if (contentName.equals("contents.json"))
                 continue;
-            }
             try {
                 Path path = Paths.get(contentsDirectoryPath, contentName);
                 // Get the json contain data info of the file get data info
@@ -91,12 +91,12 @@ public class FileSystemManger implements FileManager{
                     dataInfo = new DataInfo(hash, size, metadata);
                     dataInfo.titles.add(contentName);
                 } else {
-                    // Generate new data info if the content is new
                     hash = getHash(path.toString());
                     long size = 0;
                     HashMap<String, String> metadata = null;
                     // check if the is renamed
                     if (hashList.contains(hash)) {
+                        // Get the information of the json object because the file it is renamed
                         int index = hashList.indexOf(hash);
                         JSONObject dataInfoJson = (JSONObject) dataInfoList.get(index);
                         size = (long) dataInfoJson.get("size");
@@ -104,6 +104,7 @@ public class FileSystemManger implements FileManager{
                         nameList.add(index, contentName);
                         metadata = (HashMap<String, String>) dataInfoJson.get("metadata");
                     } else {
+                        // Generate new data info if the content is new
                         size = Files.size(Paths.get(contentsDirectoryPath, contentName));
                         nameList.add(contentName);
                         hashList.add(hash);
@@ -125,7 +126,7 @@ public class FileSystemManger implements FileManager{
 
         // remove old hashes
         newContent = newContent || removeOldHashes(recognizeHashes, contentsJsonObject);
-        // If have new content write the file
+        // If have new content or updates, write the file
         if (newContent) {
             try {
                 writeContentsInJson(contentsJsonObject);
