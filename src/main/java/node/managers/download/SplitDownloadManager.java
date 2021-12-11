@@ -100,7 +100,13 @@ public class SplitDownloadManager implements DownloadManager {
             // Add the new dataChunk to the list
             dataChunks.add((int)dataChunk.chunkNumber % chunkWindowSize, dataChunk);
             // If all the window fragments are in the queue, are written to a temporary file
-            if (dataChunks.size() != 0 && (dataChunks.size()  % chunkWindowSize) == 0) {
+            if ((dataChunks.size() - 1 != 0 && ((dataChunks.size() - 1)  % chunkWindowSize) == 0)  ) {
+                writeContent(hash);
+                // Clean the dataChunks of the windows
+                dataChunks.clear();
+                // Notifies to the download process to continue with the next chunks window
+                dataChunks.notifyAll();
+            } else if (dataChunk.size == contentDataInfo.size) {
                 writeContent(hash);
                 // Clean the dataChunks of the windows
                 dataChunks.clear();
@@ -144,6 +150,8 @@ public class SplitDownloadManager implements DownloadManager {
         // Create a Chunks Queue for the download of the content
         pendingDownload.put(contentDataInfo.hash, new ArrayList<DataChunk>());
         List<DataChunk> chunckBytesList = pendingDownload.get(hash);
+        // The first one is null to prevent the process ending before the chunks arrive
+        chunckBytesList.add(null);
 
         // Split download
         for (long chunkNumber = 0; chunkNumber < numberOfChunks; chunkNumber++) {
@@ -168,6 +176,7 @@ public class SplitDownloadManager implements DownloadManager {
                     }
                 }
             }
+            chunckBytesList.add(null);
         }
         // Write the last fragments if the number of fragments is less than the size of the windows
         writeContent(hash);
@@ -194,6 +203,8 @@ public class SplitDownloadManager implements DownloadManager {
 
     private void writeContent(String hash) {
         List<DataChunk> chunkList = pendingDownload.get(hash);
+        // Remove the first because it is null
+        chunkList.remove(null);
         nodeManager.addContentsBytesToTMPFile(hash, chunkList);
     }
 }

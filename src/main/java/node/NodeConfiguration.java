@@ -14,8 +14,8 @@ public class NodeConfiguration {
     private static String configPath = Paths.get("configurations", "config.json").toString();
     public static String contentDirectory = "contents";
     public static int numBytesChunk = 10000000; // Default 1MB
-    public static int numMaxDownloadChunksThreads = 1;
-    public static int numMaxUploadThreads = 1;
+    public static int numMaxDownloadChunksThreads = 2;
+    public static int numMaxUploadThreads = 2;
 
     public static void saveConfiguration() throws IOException {
         JSONObject configurationJSON = new JSONObject();
