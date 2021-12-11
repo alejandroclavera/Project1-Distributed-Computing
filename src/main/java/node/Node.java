@@ -59,7 +59,7 @@ public class Node {
         return nodeManager.connectTo(host, port);
     }
 
-    public boolean connectTo(String host){
+    public boolean connectTo(String host) {
         return nodeManager.connectTo(host);
     }
 

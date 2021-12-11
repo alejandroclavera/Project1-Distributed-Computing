@@ -3,9 +3,11 @@ package node.commandSystem;
 
 import common.DataInfo;
 import node.Node;
+import node.NodeConfiguration;
 import node.managers.NodeManager;
 
 
+import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -70,6 +72,18 @@ public class CommandSystem {
                 filteredSearch();
             }else if(command.equals("download")){
                 downloadCommand();
+            }else if (command.equals("config")) {
+                System.out.println("NODE CONFIGURATION");
+                System.out.println(NodeConfiguration.getParams());
+            }else if (command.equals("editConfig")) {
+                editOptionsCommand();
+            }else if (command.equals("saveConfig")) {
+                try {
+                    NodeConfiguration.saveConfiguration();
+                    System.out.println(GREEN + "Config saved");
+                } catch (IOException e) {
+                    errorMessage("can't save the configurations");
+                }
             }else if(command.equals("exit")) {
                 exit = true;
             } else {
@@ -88,7 +102,7 @@ public class CommandSystem {
             isConnected = node.connectTo(arguments[1], Integer.parseInt(arguments[2]));
 
         if (isConnected)
-            System.out.println(GREEN + "Connected with:" + arguments[1]);
+            System.out.println(GREEN + "connected with:" + arguments[1]);
         else
             errorMessage("can't connect with: " + arguments[1]);
     }
@@ -139,6 +153,44 @@ public class CommandSystem {
         }
         String hash = options.get(indexOption).hash;
         node.download(hash);
+    }
+
+    private void editOptionsCommand() {
+        boolean stop = false;
+        Scanner scanner = new Scanner(System.in);
+        String param, value;
+        while (!stop) {
+            System.out.println(NodeConfiguration.getParams());
+            System.out.print("Enter configuration param: ");
+            param = scanner.nextLine();
+            System.out.print("Enter value to filter with keyword " + "\"" + param + "\": " );
+            value = scanner.nextLine();
+            editOptions(param, value);
+            System.out.print("Enter other keyword to filter yes/no (y/n): ");
+            String res = scanner.nextLine().strip().toLowerCase();
+            stop = !res.equals("y");
+        }
+    }
+
+    private void editOptions(String param, String value) {
+        if (param.equals("contentDirectory")){
+            NodeConfiguration.contentDirectory = value;
+        } else {
+            try {
+                int numericValue = Integer.parseInt(value);
+                if (param.equals("numBytesChunk")) {
+                    NodeConfiguration.numBytesChunk = numericValue;
+                } else if (param.equals("numMaxDownloadChunksThreads")) {
+                    NodeConfiguration.numMaxDownloadChunksThreads = numericValue;
+                } else if (param.equals("numMaxUploadThreads")) {
+                    NodeConfiguration.numMaxUploadThreads = numericValue;
+                } else {
+                    errorMessage("bad param \"" + param + "\"");
+                }
+            } catch (Exception e) {
+                errorMessage("bad value \"" + value + "\"");
+            }
+        }
     }
 
     private void errorMessage(String message) {

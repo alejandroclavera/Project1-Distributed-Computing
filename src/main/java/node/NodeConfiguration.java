@@ -44,4 +44,11 @@ public class NodeConfiguration {
         numMaxDownloadChunksThreads = (int)(long) jsonObject.get("numMaxDownloadChunksThreads");
         numMaxUploadThreads = (int)(long) jsonObject.get("numMaxUploadThreads");
     }
+
+    public static String getParams() {
+        return "contentDirectory: " + contentDirectory +"\n" +
+                "numBytesChunk: " + numBytesChunk +"\n" +
+                "numMaxDownloadChunksThreads: " + numMaxDownloadChunksThreads +"\n" +
+                "numMaxUploadThreads: " + numMaxUploadThreads;
+    }
 }

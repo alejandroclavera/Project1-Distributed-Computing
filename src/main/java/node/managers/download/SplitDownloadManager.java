@@ -199,7 +199,6 @@ public class SplitDownloadManager implements DownloadManager {
         }
     }
 
-
     private boolean waitWindowChunk(List<DataChunk> windowChunks) {
         synchronized (windowChunks) {
             int trys = 0;
