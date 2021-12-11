@@ -58,7 +58,7 @@ public class CommandSystem {
         boolean exit = false;
         System.out.println(header);
         while (!exit){
-            System.out.print("-> ");
+            System.out.print("\r-> ");
             String input = sc.nextLine();
             String[] arguments = input.split(" ");
             String command = arguments[0];
@@ -81,10 +81,16 @@ public class CommandSystem {
     }
 
     private void connectCommand(String[] arguments) {
+        boolean isConnected = false;
         if (arguments.length == 2)
-            node.connectTo(arguments[1]);
+            isConnected = node.connectTo(arguments[1]);
         else
-            node.connectTo(arguments[1], Integer.parseInt(arguments[2]));
+            isConnected = node.connectTo(arguments[1], Integer.parseInt(arguments[2]));
+
+        if (isConnected)
+            System.out.println(GREEN + "Connected with:" + arguments[1]);
+        else
+            errorMessage("can't connect with: " + arguments[1]);
     }
 
     private void searchCommand() {
@@ -125,7 +131,7 @@ public class CommandSystem {
     }
 
     private void resetColors() {
-        System.out.println(RESET);
+        System.out.println(RESET + "\r");
     }
 
     private void printOptions() {

@@ -54,12 +54,12 @@ public class Node {
         nodeManager.downloadContent(hash);
     }
 
-    public void connectTo(String host, int port){
-        nodeManager.connectTo(host, port);
+    public boolean connectTo(String host, int port){
+        return nodeManager.connectTo(host, port);
     }
 
-    public void connectTo(String host){
-        nodeManager.connectTo(host);
+    public boolean connectTo(String host){
+        return nodeManager.connectTo(host);
     }
 
     public void disconnect() throws RemoteException, NotBoundException {
