@@ -165,11 +165,11 @@ public class SplitDownloadManager implements DownloadManager {
             parameters.put("chunkNumber", String.valueOf(chunkNumber));
             Query query = new Query(QueryType.DOWNLOAD, parameters, connectionNode);
             // Send the query
-            sendQuery(query, nodeToSend);
+            sendQuery(hash, (int)chunkNumber, nodeToSend);
             if ((chunkNumber == 0  || (chunkNumber + 1) % chunkWindowSize != 0) && chunkNumber != numberOfChunks - 1)
                 continue;
             // Wait for the arrival of all the window chunks
-            allCompletedWindow &= waitWindowChunk(chunckBytesList);
+            allCompletedWindow &= waitWindowChunk(hash);
             if (!allCompletedWindow)
                 return;
 
@@ -181,9 +181,14 @@ public class SplitDownloadManager implements DownloadManager {
         nodeManager.tmpFileToFile(hash, contentDataInfo.titles.get(0));
         // Remove the chunk queue of the content download
         pendingDownload.remove(hash);
+        downloadStatus.remove(hash);
     }
 
-    private void sendQuery(Query query, ConnectionNode nodeToSend) {
+    private void sendQuery(String hash, int chunk, ConnectionNode nodeToSend) {
+        HashMap<String, Object> parameters = new HashMap<>();
+        parameters.put("hash",  hash);
+        parameters.put("chunkNumber", String.valueOf(chunk));
+        Query query = new Query(QueryType.DOWNLOAD, parameters, connectionNode);
         try {
             nodeToSend.send(query);
         } catch (RemoteException e) {
@@ -199,17 +204,48 @@ public class SplitDownloadManager implements DownloadManager {
         }
     }
 
-    private boolean waitWindowChunk(List<DataChunk> windowChunks) {
+    private void tryCompleteWindow(String hash, int tryNumber) {
+        DownloadStatus status = downloadStatus.get(hash);
+        List<DataChunk> receivedChunks = pendingDownload.get(hash);
+        List<ConnectionNode> providers = nodeManager.getProviders(hash);
+        int firstChunkWindow = status.numWindow * chunkWindowSize;
+        int endChunk;
+        if (status.numWindow == status.maxWindows)
+            endChunk = firstChunkWindow + (status.maxChunks - 1) - status.numChunksDownloaded - 1;
+        else
+            endChunk = firstChunkWindow + chunkWindowSize - 1;
+
+        LogSystem.logInfoMessage("Start the try " + tryNumber + " to complete the windows");
+        for(int chunk = firstChunkWindow; chunk <=endChunk; chunk++) {
+            if (!isChunkReceived(hash, chunk)) {
+                ConnectionNode nodeToSend = providers.get((int)((chunk + tryNumber) % providers.size()));
+                sendQuery(hash, chunk, nodeToSend);
+            }
+        }
+    }
+
+    private boolean isChunkReceived(String hash, int chunkNumber) {
+        List<DataChunk> downloadedChunks = pendingDownload.get(hash);
+        for (DataChunk dataChunk : downloadedChunks) {
+            if (dataChunk != null && dataChunk.chunkNumber == chunkNumber)
+                return true;
+        }
+        return false;
+    }
+
+    private boolean waitWindowChunk(String hash){
+        List<DataChunk> windowChunks = pendingDownload.get(hash);
         synchronized (windowChunks) {
             int trys = 0;
             if (windowChunks.size() > 0) {
-                while (trys < 3 && windowChunks.size() > 0) {
+                while (trys <= 3 && windowChunks.size() > 0) {
                     try {
                         windowChunks.wait(1);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
                     trys += 1;
+                    tryCompleteWindow(hash, trys);
                 }
                 if (windowChunks.size() > 0 ) {
                     LogSystem.logErrorMessage("max num of try of window");
@@ -235,8 +271,8 @@ class DownloadStatus {
     int maxChunks;
 
     public DownloadStatus(int numChunks, int windowsSize) {
-        this.numWindow = 1;
-        this.maxWindows = numChunks / windowsSize + ((numChunks % windowsSize == 0) ? 0 : 1);
+        this.numWindow = 0;
+        this.maxWindows = numChunks / windowsSize + ((numChunks % windowsSize == 0) ? -1 : 0);
         this.numChunksDownloaded = 0;
         this.maxChunks = numChunks;
     }
