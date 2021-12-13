@@ -51,7 +51,7 @@ public class CommandSystem {
     }
 
 
-    public  CommandSystem(Node node) {
+    public CommandSystem(Node node) {
         this.node = node;
     }
 
@@ -72,7 +72,10 @@ public class CommandSystem {
                 filteredSearch();
             }else if(command.equals("download")){
                 downloadCommand();
-            }else if (command.equals("config")) {
+            } else if (command.equals("status")) {
+                System.out.println("Download Status");
+                System.out.println(node.getDownloadStatus());
+            } else if (command.equals("config")) {
                 System.out.println("NODE CONFIGURATION");
                 System.out.println(NodeConfiguration.getParams());
             }else if (command.equals("editConfig")) {
@@ -84,7 +87,14 @@ public class CommandSystem {
                 } catch (IOException e) {
                     errorMessage("can't save the configurations");
                 }
-            }else if(command.equals("exit")) {
+            } else if (command.equals("nodeContents")){
+                printNodeContents();
+            } else if(command.equals("recognize")) {
+                System.out.println("in process...");
+                node.recognizeContents();
+            } else if (command.equals("addMetadata")) {
+                addMetadataCommand();
+            } else if(command.equals("exit")) {
                 exit = true;
             } else {
                 errorMessage("command \"" + arguments[0] + "\"");
@@ -193,6 +203,36 @@ public class CommandSystem {
         }
     }
 
+    private void addMetadataCommand() {
+        Scanner scanner = new Scanner(System.in);
+        int indexOption = -1;
+        boolean stop = false;
+        HashMap<String, String> metadata = new HashMap<>();
+        List<DataInfo> nodeContents = node.getContentList();
+        printNodeContents();
+        while (indexOption < 0 || indexOption > nodeContents.size()) {
+            System.out.print("Select the content index: ");
+            indexOption = scanner.nextInt();
+            if (indexOption < 0 || indexOption > nodeContents.size())  {
+                errorMessage("bad index \"" + indexOption + "\"");
+            }
+        }
+        String param, value;
+        // Reset the scanner to clean the input buffer
+        scanner = new Scanner(System.in);
+        while (!stop) {
+            System.out.print("Enter metadata keyword: ");
+            param = scanner.nextLine();
+            System.out.print("Enter value to the keyword " + "\"" + param + "\": " );
+            value = scanner.nextLine();
+            metadata.put(param, value);
+            System.out.print("Enter other metadata keyword yes/no (y/n): ");
+            String res = scanner.nextLine().strip().toLowerCase();
+            stop = !res.equals("y");
+        }
+        node.addMetadata(nodeContents.get(indexOption).hash, metadata);
+    }
+
     private void errorMessage(String message) {
         System.out.println(RED + "Error " + RESET + message);
     }
@@ -206,6 +246,15 @@ public class CommandSystem {
         for (DataInfo contentInfo : options) {
             System.out.println(index + ": " + contentInfo);
             index +=1;
+        }
+    }
+
+    private void printNodeContents() {
+        System.out.println("Node Contents");
+        int index = 0;
+        for (DataInfo dataInfo : node.getContentList()) {
+            System.out.println(index + ": " + dataInfo);
+            index += 1;
         }
     }
 }

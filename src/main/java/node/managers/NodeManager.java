@@ -82,6 +82,14 @@ public class NodeManager {
             e.printStackTrace();
         }
     }
+
+    public void addMetadata(String hash, HashMap<String, String> metadata) {
+        fileManager.addMetadata(hash, metadata);
+    }
+
+    public void validateContent(DataInfo dataInfo) {
+        fileManager.validate(dataInfo);
+    }
     
     //***********************************************************************
     // * METHODS THAT ALLOW THE INTERACTION BETWEEN THE DIFERENTS MANGAGERS *
@@ -135,6 +143,10 @@ public class NodeManager {
             }
         }
         return null;
+    }
+
+    public String getDownloadStatus() {
+        return downloadManager.getDownloadStatus();
     }
 
 }

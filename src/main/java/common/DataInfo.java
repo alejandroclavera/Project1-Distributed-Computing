@@ -6,6 +6,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 public class DataInfo implements Serializable {
     public final String hash;
@@ -21,7 +22,10 @@ public class DataInfo implements Serializable {
     public DataInfo(String hash, long size, HashMap<String, String> metadata) {
         this.hash = hash;
         this.titles = new ArrayList<>();
-        this.metadata = metadata;
+        if (metadata == null)
+            this.metadata = new HashMap<>();
+        else
+            this.metadata = metadata;
         this.size = size;
         this.providers = new ArrayList<>();
     }
@@ -34,6 +38,16 @@ public class DataInfo implements Serializable {
                 ", metadata=" + metadata +
                 '}' + '\n';
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DataInfo dataInfo = (DataInfo) o;
+        return size == dataInfo.size &&
+                Objects.equals(hash, dataInfo.hash);
+    }
+
 
     public JSONObject toJson() {
         JSONObject dataInfoJson = new JSONObject();

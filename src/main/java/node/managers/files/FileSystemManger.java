@@ -3,6 +3,7 @@ package node.managers.files;
 import common.DataChunk;
 import common.DataInfo;
 import node.NodeConfiguration;
+import node.logs.LogSystem;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -21,11 +22,14 @@ import java.util.List;
 public class FileSystemManger implements FileManager{
     private String contentsDirectoryPath;
     private HashMap<String, DataInfo> contentsMap;
+    private List<DataInfo> contentToValidate;
 
     public FileSystemManger(String contentsDirectoryPath) {
         this.contentsDirectoryPath = contentsDirectoryPath;
         this.contentsMap = new HashMap<>();
+        this.contentToValidate = new ArrayList<>();
         recognizeContents();
+        //startValidator();
     }
 
     private String getHash(String fileName) throws IOException, NoSuchAlgorithmException {
@@ -76,7 +80,7 @@ public class FileSystemManger implements FileManager{
         String hash = null;
         for (String contentName : contentsDirectory.list()) {
             // Ignore the contents.json
-            if (contentName.equals("contents.json"))
+            if (contentName.equals("contents.json") || contentName.endsWith(".tmp"))
                 continue;
             try {
                 Path path = Paths.get(contentsDirectoryPath, contentName);
@@ -246,6 +250,83 @@ public class FileSystemManger implements FileManager{
         }
     }
 
+    public void validate(DataInfo dataInfo) {
+        synchronized (contentToValidate) {
+            // Add the content to the list to validate it
+            contentToValidate.add(dataInfo);
+            // Notify to validator
+            contentToValidate.notify();
+        }
+    }
+
+    @Override
+    public void addMetadata(String hash, HashMap<String, String> metadata) {
+        DataInfo contentDataInfo = contentsMap.get(hash);
+        contentDataInfo.metadata.putAll(metadata);
+        JSONObject jsonObject = getContentsJson();
+        JSONArray jsonArray = new JSONArray();
+        for (DataInfo dataInfo : contentsMap.values()) {
+            jsonArray.add(dataInfo.toJson());
+        }
+        jsonObject.put("dataInfo", jsonArray);
+        try {
+            writeContentsInJson(jsonObject);
+        } catch (IOException e) {
+            LogSystem.logErrorMessage("can't add metadata to the content");
+        }
+    }
+
+    private void startValidator() {
+        // Start the thread that validate the download contents
+        new Thread(() ->{
+            validator();
+        }).start();
+    }
+
+    private void validator() {
+        while (true) {
+            List<DataInfo> contentsValidated = new ArrayList<>();
+            // Try the validate each content of the list
+            for (DataInfo dataInfo : contentToValidate) {
+                String path = Paths.get(contentsDirectoryPath, dataInfo.titles.get(0)).toString();
+                File contentFile = new File(path);
+                // Validate the content if the file exists
+                if (contentFile.exists()) {
+                    try {
+                        // Calculate the hash of the content
+                        String hash = getHash(path);
+                        // Check if the hash of the content is the same of the expected
+                        if (hash.equals(dataInfo.hash)) {
+                            // Add the content to the contents registry
+                            contentsMap.put(dataInfo.hash, dataInfo);
+                        } else {
+                            // If the hash aren't equals -> security problem
+                            contentFile.delete();
+                            LogSystem.logErrorMessage("error of security of the content");
+                        }
+                        contentsValidated.add(dataInfo);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } catch (NoSuchAlgorithmException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            synchronized (contentToValidate) {
+                // Remove the data info of the contents validated
+                contentToValidate.removeAll(contentsValidated);
+                if (contentToValidate.size() == 0) {
+                    // if the thread don't have contents to validate wait.
+                    try {
+                        contentToValidate.wait();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
+
     private JSONObject readContentsJson() throws IOException, ParseException {
         JSONParser jsonParser = new JSONParser();
         FileReader jsonFile = new FileReader(Paths.get(contentsDirectoryPath, "contents.json").toString());
@@ -291,5 +372,4 @@ public class FileSystemManger implements FileManager{
         }
         return anyHashRemoved;
     }
-
 }

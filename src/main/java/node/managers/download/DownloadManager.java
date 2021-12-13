@@ -9,6 +9,7 @@ import java.rmi.RemoteException;
 public interface DownloadManager {
     void setConnectionNode(ConnectionNode connectionNode);
     void download(String hash) throws RemoteException;
+    String getDownloadStatus();
     public void download(DataChunk dataChunk);
     public void upload(Query query) throws RemoteException;
 }

@@ -1,5 +1,6 @@
 package node.logs;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
@@ -11,6 +12,10 @@ public class LogSystem {
 
     private static void startLogSystem() {
         try {
+            File logDirectory = new File("logs");
+            if (!logDirectory.exists()) {
+                logDirectory.mkdir();
+            }
             logger = Logger.getLogger("nodeLogs");
             FileHandler fhandler = new FileHandler("logs/nodeLogs.log");
             logger.addHandler(fhandler);

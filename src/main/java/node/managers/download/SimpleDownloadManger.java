@@ -13,6 +13,7 @@ public class SimpleDownloadManger implements DownloadManager {
     private NodeManager nodeManager;
     private ConnectionNode connectionNode;
 
+
     public SimpleDownloadManger(NodeManager nodeManager) {
         this.nodeManager = nodeManager;
     }
@@ -36,6 +37,11 @@ public class SimpleDownloadManger implements DownloadManager {
                 nodeManager.forceRemoveConnection(toSendNode);
             }
         }
+    }
+
+    @Override
+    public String getDownloadStatus() {
+        return "Donwloading...";
     }
 
     @Override

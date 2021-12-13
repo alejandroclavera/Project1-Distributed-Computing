@@ -4,6 +4,7 @@ package node.managers.connection;
 import common.ConnectionNode;
 import common.Query;
 import common.QueryType;
+import node.NodeConfiguration;
 import node.logs.LogSystem;
 
 import java.rmi.NotBoundException;
@@ -46,14 +47,19 @@ public class SimpleConnection implements ConnectionManager {
             nodeToConnect.send(connectionQuery);
             LogSystem.logInfoMessage("Send the connection query");
             synchronized (connectedNodes) {
-                while (!connectedNodes.contains(nodeToConnect) && connectedNodes.contains(connectionNode)) {
-                    connectedNodes.wait();
+                while (!connectedNodes.contains(nodeToConnect)) {
+                    connectedNodes.wait(NodeConfiguration.connectionResponseTimeout);
+                }
+                // Check if arrive the connection accept response of the node
+                if(!connectedNodes.contains(nodeToConnect)) {
+                    LogSystem.logInfoMessage("Connection timeout ");
+                    return false;
                 }
             }
         } catch (RemoteException e) {
             if (nodeToConnect != null)
                 pendingNodes.remove(nodeToConnect);
-            LogSystem.logErrorMessage("Connection  refused accepted");
+            LogSystem.logErrorMessage("Connection falied remote exception");
             return false;
         } catch (NotBoundException | InterruptedException e ) {
             return false;
@@ -76,8 +82,8 @@ public class SimpleConnection implements ConnectionManager {
         HashMap<String, Object> parameters = new HashMap<>();
         QueryType responseType;
         LogSystem.logInfoMessage("Arrived a new connection query");
-        if (connectionQuery.queryType != QueryType.CONNECTION) {
-            responseType = QueryType .CONNECTION_REJECTED;
+        if (connectionQuery.queryType != QueryType.CONNECTION || connectedNodes.contains(senderNode)) {
+            responseType = QueryType.CONNECTION_REJECTED;
             parameters.put("message", "Error queryType must be CONNECTION");
             LogSystem.logInfoMessage("Reject the connection query (bad queryType)");
         } else {

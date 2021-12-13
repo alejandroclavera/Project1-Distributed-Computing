@@ -16,9 +16,11 @@ public class SplitDownloadManager implements DownloadManager {
     private NodeManager nodeManager;
     private HashMap<String, List<DataChunk>> pendingDownload;
     private HashMap<String, DownloadStatus> downloadStatus;
-    private int chunkWindowSize = 50;
+    private int chunkWindowSize = NodeConfiguration.chunkWindowSize ;
     private int numBytesChunk = NodeConfiguration.numBytesChunk;
     // Thread control attributes
+    private int nThreadsContentDownload = 0;
+    private Queue<String> downloadContentQueue = new ConcurrentLinkedQueue<>();
     private int nThreadsDownload = 0;
     private Queue<DataChunk> downloadQueue = new ConcurrentLinkedQueue<>();
     private int nThreadsUpload = 0;
@@ -35,37 +37,55 @@ public class SplitDownloadManager implements DownloadManager {
         this.connectionNode = connectionNode;
     }
 
-    @Override
     public void download(String hash) throws RemoteException {
-        DataInfo contentDataInfo = nodeManager.getDataInfo(hash);
-        List<ConnectionNode> providers = nodeManager.getProviders(hash);
-        // Download the content if the content have a providers
-        if (providers.size() != 0) {
-            downLoadProcess(contentDataInfo, providers);
-            LogSystem.logInfoMessage("Download completed");
+        boolean downloadContent = false;
+        synchronized (downloadContentQueue) {
+            if (nThreadsDownload < NodeConfiguration.numMaxDownloadThreads) {
+                downloadContent = true;
+                nThreadsDownload +=1;
+            } else {
+                downloadContentQueue.add(hash);
+            }
+        }
+
+        if (downloadContent) {
+            new Thread(() -> {
+                downloadThread(hash);
+            }).start();
         }
     }
 
     @Override
-    public void download(DataChunk dataChunk) {
-       DataChunk nextDataChunk = null;
-       downloadQueue.add(dataChunk);
-       synchronized (downloadQueue) {
-           if (nThreadsDownload < NodeConfiguration.numMaxDownloadChunksThreads) {
-                nextDataChunk = downloadQueue.poll();
-                nThreadsDownload +=1;
-           }
-       }
+    public String getDownloadStatus() {
+        String statusFormated = "";
+        for (String hash : downloadStatus.keySet()) {
+            DataInfo dataInfo = nodeManager.getDataInfo(hash);
+            statusFormated += dataInfo.titles.get(0) + " " + downloadStatus.get(hash).toString() + "\n";
+        }
+        return statusFormated;
+    }
 
-       while (nextDataChunk != null) {
-           downloadChunk(nextDataChunk);
-           nextDataChunk = downloadQueue.poll();
-           if(nextDataChunk == null) {
-               synchronized (downloadQueue) {
-                   nThreadsDownload -= 1;
-               }
-           }
-       }
+    @Override
+    public void download(DataChunk dataChunk) {
+        String hash = dataChunk.hash;
+        List<DataChunk> dataChunks = pendingDownload.get(hash);
+        DataInfo contentDataInfo = nodeManager.getDataInfo(dataChunk.hash);
+        DownloadStatus status = downloadStatus.get(hash);
+        synchronized (dataChunks) {
+            // Add the new dataChunk to the list
+            LogSystem.logInfoMessage("chunk: " + dataChunk.chunkNumber);
+            if (!dataChunks.contains(dataChunk))
+                dataChunks.add(dataChunk);
+            status.numChunksDownloaded += 1;
+            // If all the window fragments are in the queue, are written to a temporary file
+            if ((dataChunks.size() - 1)  % chunkWindowSize == 0 || status.numWindow == status.maxWindows) {
+                writeContent(hash);
+                // Clean the dataChunks of the windows
+                dataChunks.clear();
+                // Notifies to the download process to continue with the next chunks window
+                dataChunks.notifyAll();
+            }
+        }
     }
 
     @Override
@@ -95,6 +115,38 @@ public class SplitDownloadManager implements DownloadManager {
         }
     }
 
+    private void downloadThread(String firstHash) {
+        String hash = firstHash;
+        do {
+            try {
+                downloadContent(hash);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+            synchronized (downloadContentQueue) {
+                if (downloadContentQueue.size() != 0)
+                    hash = downloadContentQueue.peek();
+                else {
+                    hash = null;
+                    nThreadsContentDownload -=1;
+                }
+            }
+        } while (hash != null);
+    }
+
+    private void downloadContent(String hash) throws RemoteException {
+        DataInfo contentDataInfo = nodeManager.getDataInfo(hash);
+        List<ConnectionNode> providers = nodeManager.getProviders(hash);
+
+        // Download the content if the content have a providers and the node don't have it
+        if (!nodeManager.getContentsList().contains(contentDataInfo) && providers.size() != 0) {
+            downLoadProcess(contentDataInfo, providers);
+            // Validate the content
+            nodeManager.validateContent(contentDataInfo);
+            LogSystem.logInfoMessage("Download completed");
+        }
+    }
+
     private void downloadChunk(DataChunk dataChunk) {
         String hash = dataChunk.hash;
         List<DataChunk> dataChunks = pendingDownload.get(hash);
@@ -102,7 +154,9 @@ public class SplitDownloadManager implements DownloadManager {
         DownloadStatus status = downloadStatus.get(hash);
         synchronized (dataChunks) {
             // Add the new dataChunk to the list
-            dataChunks.add(dataChunk);
+            LogSystem.logInfoMessage("chunk: " + dataChunk.chunkNumber);
+            if (!dataChunks.contains(dataChunk))
+                dataChunks.add(dataChunk);
             status.numChunksDownloaded += 1;
             // If all the window fragments are in the queue, are written to a temporary file
             if ((dataChunks.size() - 1)  % chunkWindowSize == 0 || status.numWindow == status.maxWindows) {
@@ -238,11 +292,12 @@ public class SplitDownloadManager implements DownloadManager {
         synchronized (windowChunks) {
             int trys = 0;
             if (windowChunks.size() > 0) {
-                while (trys <= 3 && windowChunks.size() > 0) {
+                while (trys <= NodeConfiguration.maxTryWindow && windowChunks.size() > 0) {
                     try {
-                        windowChunks.wait(1);
+                        windowChunks.wait(NodeConfiguration.windowsTimeout);
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                       LogSystem.logInfoMessage("Interruption");
+                       System.exit(0);
                     }
                     trys += 1;
                     tryCompleteWindow(hash, trys);

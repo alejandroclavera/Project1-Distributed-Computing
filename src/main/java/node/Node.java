@@ -14,6 +14,7 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
+import java.util.List;
 
 public class Node {
     private Registry registry;
@@ -30,7 +31,6 @@ public class Node {
         this.port = port;
         this.registry = startRegistry(port);
         registryNode();
-
     }
 
     public Node(int port) throws RemoteException, AlreadyBoundException {
@@ -51,6 +51,14 @@ public class Node {
         return nodeManager.search(filterBy);
     }
 
+    public void recognizeContents() {
+        fileManager.recognizeContents();
+    }
+
+    public List<DataInfo> getContentList() {
+        return nodeManager.getContentsList();
+    }
+
     public void download(String hash){
         nodeManager.downloadContent(hash);
     }
@@ -68,9 +76,24 @@ public class Node {
         registry.unbind("node");
     }
 
-    private void registryNode() throws RemoteException, AlreadyBoundException {
-        registry = startRegistry(this.port);
-        registry.bind("node", connectionNode);
+    public void addMetadata(String hash, HashMap<String, String> metadata) {
+        nodeManager.addMetadata(hash, metadata);
+    }
+
+    public String getDownloadStatus() {
+        return nodeManager.getDownloadStatus();
+    }
+
+    private void registryNode()  {
+        try {
+            registry = startRegistry(this.port);
+            registry.bind("node", connectionNode);
+        } catch (RemoteException e) {
+           System.out.println("Error al exportar");
+           System.exit(-1);
+        } catch (AlreadyBoundException e) {
+            System.out.println("Excepcion");
+        }
     }
 
 
