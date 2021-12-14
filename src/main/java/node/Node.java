@@ -22,6 +22,7 @@ public class Node {
     private FileManager fileManager;
     private ConnectionNode connectionNode;
     private int port;
+    public static boolean isRunning = true;
 
     public Node(NodeManager nodeManager, FileManager fileManager, int port) throws RemoteException, AlreadyBoundException {
         this.nodeManager = nodeManager;
@@ -74,6 +75,7 @@ public class Node {
     public void disconnect() throws RemoteException, NotBoundException {
         UnicastRemoteObject.unexportObject(connectionNode, true);
         registry.unbind("node");
+        isRunning = false;
     }
 
     public void addMetadata(String hash, HashMap<String, String> metadata) {

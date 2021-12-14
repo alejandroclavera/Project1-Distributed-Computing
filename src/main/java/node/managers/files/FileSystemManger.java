@@ -2,6 +2,7 @@ package node.managers.files;
 
 import common.DataChunk;
 import common.DataInfo;
+import node.Node;
 import node.NodeConfiguration;
 import node.logs.LogSystem;
 import org.json.simple.JSONArray;
@@ -29,7 +30,7 @@ public class FileSystemManger implements FileManager{
         this.contentsMap = new HashMap<>();
         this.contentToValidate = new ArrayList<>();
         recognizeContents();
-        //startValidator();
+        startValidator();
     }
 
     private String getHash(String fileName) throws IOException, NoSuchAlgorithmException {
@@ -284,7 +285,7 @@ public class FileSystemManger implements FileManager{
     }
 
     private void validator() {
-        while (true) {
+        while (Node.isRunning) {
             List<DataInfo> contentsValidated = new ArrayList<>();
             // Try the validate each content of the list
             for (DataInfo dataInfo : contentToValidate) {
@@ -299,6 +300,7 @@ public class FileSystemManger implements FileManager{
                         if (hash.equals(dataInfo.hash)) {
                             // Add the content to the contents registry
                             contentsMap.put(dataInfo.hash, dataInfo);
+                            LogSystem.logInfoMessage("content validated");
                         } else {
                             // If the hash aren't equals -> security problem
                             contentFile.delete();
@@ -318,7 +320,7 @@ public class FileSystemManger implements FileManager{
                 if (contentToValidate.size() == 0) {
                     // if the thread don't have contents to validate wait.
                     try {
-                        contentToValidate.wait();
+                        contentToValidate.wait(1000);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }

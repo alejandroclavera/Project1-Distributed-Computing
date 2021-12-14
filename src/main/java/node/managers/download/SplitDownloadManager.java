@@ -19,10 +19,8 @@ public class SplitDownloadManager implements DownloadManager {
     private int chunkWindowSize = NodeConfiguration.chunkWindowSize ;
     private int numBytesChunk = NodeConfiguration.numBytesChunk;
     // Thread control attributes
-    private int nThreadsContentDownload = 0;
-    private Queue<String> downloadContentQueue = new ConcurrentLinkedQueue<>();
     private int nThreadsDownload = 0;
-    private Queue<DataChunk> downloadQueue = new ConcurrentLinkedQueue<>();
+    private Queue<String> downloadQueue = new ConcurrentLinkedQueue<>();
     private int nThreadsUpload = 0;
     private Queue<Query> uploadQuery = new ConcurrentLinkedQueue<>();
 
@@ -39,12 +37,12 @@ public class SplitDownloadManager implements DownloadManager {
 
     public void download(String hash) throws RemoteException {
         boolean downloadContent = false;
-        synchronized (downloadContentQueue) {
+        synchronized (downloadQueue) {
             if (nThreadsDownload < NodeConfiguration.numMaxDownloadThreads) {
                 downloadContent = true;
                 nThreadsDownload +=1;
             } else {
-                downloadContentQueue.add(hash);
+                downloadQueue.add(hash);
             }
         }
 
@@ -123,12 +121,12 @@ public class SplitDownloadManager implements DownloadManager {
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
-            synchronized (downloadContentQueue) {
-                if (downloadContentQueue.size() != 0)
-                    hash = downloadContentQueue.peek();
+            synchronized (downloadQueue) {
+                if (downloadQueue.size() != 0)
+                    hash = downloadQueue.peek();
                 else {
                     hash = null;
-                    nThreadsContentDownload -=1;
+                    nThreadsDownload -=1;
                 }
             }
         } while (hash != null);
