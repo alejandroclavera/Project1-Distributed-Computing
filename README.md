@@ -13,7 +13,7 @@ mvn install
 In the targt folder you can find de jar generated. To run a node you must put the next command.
 ```
 # By default the port is 1099
-java -jar <namer of jar> <port>
+java -jar <name-of-jar> <port>
 ```
 
 If are you using a IDE like intellij can build the project from maven windows -> Lifecycle -> install 
