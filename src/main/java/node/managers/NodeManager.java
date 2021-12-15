@@ -171,4 +171,7 @@ public class NodeManager {
         return downloadManager.getDownloadStatus();
     }
 
+    public void recogniceContents() {
+        fileManager.recognizeContents();
+    }
 }
