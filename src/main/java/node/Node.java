@@ -57,7 +57,7 @@ public class Node {
     }
 
     public void recognizeContents() {
-        fileManager.recognizeContents();
+        nodeManager.getContentsList();
     }
 
     public List<DataInfo> getContentList() {
