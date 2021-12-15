@@ -16,6 +16,6 @@ In the targt folder you can find de jar generated. To run a node you must put th
 java -jar <name-of-jar> <port>
 ```
 
-If are you using a IDE like intellij can build the project from maven windows -> Lifecycle -> install 
+If are you using a IDE like intellij can build the project from maven tool windows -> Lifecycle -> install 
 
 Another way to run the node, is if you're using IDE you can execute the node directly from the class NodeStarter.
