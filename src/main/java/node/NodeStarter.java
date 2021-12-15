@@ -21,10 +21,8 @@ public class NodeStarter {
            new CommandSystem(node).start();
            node.disconnect();
         } catch (RemoteException e) {
+            LogSystem.logErrorMessage("Cannot Node registered in the port " + port);
             System.exit(-1);
-        } catch (AlreadyBoundException e) {
-            System.exit(-1);
-            LogSystem.logErrorMessage("Node registered in the port " + port);
         } catch (NotBoundException e) {
             LogSystem.logErrorMessage("Node registered in the port " + port);
         }

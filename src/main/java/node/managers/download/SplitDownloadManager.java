@@ -18,6 +18,7 @@ public class SplitDownloadManager implements DownloadManager {
     private HashMap<String, DownloadStatus> downloadStatus;
     private int chunkWindowSize = NodeConfiguration.chunkWindowSize ;
     private int numBytesChunk = NodeConfiguration.numBytesChunk;
+
     // Thread control attributes
     private int nThreadsDownload = 0;
     private Queue<String> downloadQueue = new ConcurrentLinkedQueue<>();
@@ -35,9 +36,10 @@ public class SplitDownloadManager implements DownloadManager {
         this.connectionNode = connectionNode;
     }
 
-    public void download(String hash) throws RemoteException {
+    public void download(String hash) {
         boolean downloadContent = false;
         synchronized (downloadQueue) {
+            // Check if have threatd
             if (nThreadsDownload < NodeConfiguration.numMaxDownloadThreads) {
                 downloadContent = true;
                 nThreadsDownload +=1;
@@ -47,20 +49,11 @@ public class SplitDownloadManager implements DownloadManager {
         }
 
         if (downloadContent) {
+            // Start the the download thread
             new Thread(() -> {
                 downloadThread(hash);
             }).start();
         }
-    }
-
-    @Override
-    public String getDownloadStatus() {
-        String statusFormated = "";
-        for (String hash : downloadStatus.keySet()) {
-            DataInfo dataInfo = nodeManager.getDataInfo(hash);
-            statusFormated += dataInfo.titles.get(0) + " " + downloadStatus.get(hash).toString() + "\n";
-        }
-        return statusFormated;
     }
 
     @Override
@@ -113,17 +106,23 @@ public class SplitDownloadManager implements DownloadManager {
         }
     }
 
+    @Override
+    public String getDownloadStatus() {
+        String statusFormated = "";
+        for (String hash : downloadStatus.keySet()) {
+            DataInfo dataInfo = nodeManager.getDataInfo(hash);
+            statusFormated += dataInfo.titles.get(0) + " " + downloadStatus.get(hash).toString() + "\n";
+        }
+        return statusFormated;
+    }
+
     private void downloadThread(String firstHash) {
         String hash = firstHash;
         do {
-            try {
-                downloadContent(hash);
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
+            downloadContent(hash);
             synchronized (downloadQueue) {
                 if (downloadQueue.size() != 0)
-                    hash = downloadQueue.peek();
+                    hash = downloadQueue.poll();
                 else {
                     hash = null;
                     nThreadsDownload -=1;
@@ -132,66 +131,7 @@ public class SplitDownloadManager implements DownloadManager {
         } while (hash != null);
     }
 
-    private void downloadContent(String hash) throws RemoteException {
-        DataInfo contentDataInfo = nodeManager.getDataInfo(hash);
-        List<ConnectionNode> providers = nodeManager.getProviders(hash);
-
-        // Download the content if the content have a providers and the node don't have it
-        if (!nodeManager.getContentsList().contains(contentDataInfo) && providers.size() != 0) {
-            downLoadProcess(contentDataInfo, providers);
-            // Validate the content
-            nodeManager.validateContent(contentDataInfo);
-            LogSystem.logInfoMessage("Download completed");
-        }
-    }
-
-    private void downloadChunk(DataChunk dataChunk) {
-        String hash = dataChunk.hash;
-        List<DataChunk> dataChunks = pendingDownload.get(hash);
-        DataInfo contentDataInfo = nodeManager.getDataInfo(dataChunk.hash);
-        DownloadStatus status = downloadStatus.get(hash);
-        synchronized (dataChunks) {
-            // Add the new dataChunk to the list
-            LogSystem.logInfoMessage("chunk: " + dataChunk.chunkNumber);
-            if (!dataChunks.contains(dataChunk))
-                dataChunks.add(dataChunk);
-            status.numChunksDownloaded += 1;
-            // If all the window fragments are in the queue, are written to a temporary file
-            if ((dataChunks.size() - 1)  % chunkWindowSize == 0 || status.numWindow == status.maxWindows) {
-                writeContent(hash);
-                // Clean the dataChunks of the windows
-                dataChunks.clear();
-                // Notifies to the download process to continue with the next chunks window
-                dataChunks.notifyAll();
-            }
-        }
-    }
-
-    private void uploadProcess(Query query) {
-        ConnectionNode toNode = query.senderNode;
-        byte bytes[] = new byte[numBytesChunk];
-        // Get the query params
-        HashMap<String, Object> paramas = query.parameters;
-        String hash = (String) paramas.get("hash");
-        // Get the dataInfo of the file
-        DataInfo dataInfo = nodeManager.getDataInfo(hash);
-        long chunkNumber = Long.parseLong((String) paramas.get("chunkNumber"));
-        // Get the contentFile to send
-        FileInputStream fileInputStream = nodeManager.getContent(hash);
-        try {
-            // Find the chunk to send
-            fileInputStream.skip(numBytesChunk * chunkNumber);
-            // Get the size of the chunk
-            int size = fileInputStream.read(bytes, 0, numBytesChunk);
-            DataChunk dataChunk = new DataChunk(hash, dataInfo.titles.get(0), (int)chunkNumber, size, bytes, connectionNode);
-            // Send the chunk
-            sendChunk(dataChunk, toNode);
-        } catch (IOException e) {
-           LogSystem.logErrorMessage("Can't read chunk");
-        }
-    }
-
-    private void downLoadProcess(DataInfo contentDataInfo, List<ConnectionNode> providers) throws RemoteException {
+    private void downLoadProcess(DataInfo contentDataInfo, List<ConnectionNode> providers) {
         String hash = contentDataInfo.hash;
         // Calculate the number of chunks
         long numberOfChunks = contentDataInfo.size / numBytesChunk;
@@ -228,12 +168,47 @@ public class SplitDownloadManager implements DownloadManager {
             chunckBytesList.add(null);
             status.numWindow += 1;
         }
-        // Write the last fragments if the number of fragments is less than the size of the windows
-        //writeContent(hash);
         nodeManager.tmpFileToFile(hash, contentDataInfo.titles.get(0));
         // Remove the chunk queue of the content download
         pendingDownload.remove(hash);
         downloadStatus.remove(hash);
+    }
+
+    private void downloadContent(String hash) {
+        DataInfo contentDataInfo = nodeManager.getDataInfo(hash);
+        List<ConnectionNode> providers = nodeManager.getProviders(hash);
+
+        // Download the content if the content have a providers and the node don't have it
+        if (!nodeManager.getContentsList().contains(contentDataInfo) && providers.size() != 0) {
+            downLoadProcess(contentDataInfo, providers);
+            // Validate the content
+            nodeManager.validateContent(contentDataInfo);
+            LogSystem.logInfoMessage("Download completed");
+        }
+    }
+
+    private void uploadProcess(Query query) {
+        ConnectionNode toNode = query.senderNode;
+        byte bytes[] = new byte[numBytesChunk];
+        // Get the query params
+        HashMap<String, Object> paramas = query.parameters;
+        String hash = (String) paramas.get("hash");
+        // Get the dataInfo of the file
+        DataInfo dataInfo = nodeManager.getDataInfo(hash);
+        long chunkNumber = Long.parseLong((String) paramas.get("chunkNumber"));
+        // Get the contentFile to send
+        FileInputStream fileInputStream = nodeManager.getContent(hash);
+        try {
+            // Find the chunk to send
+            fileInputStream.skip(numBytesChunk * chunkNumber);
+            // Get the size of the chunk
+            int size = fileInputStream.read(bytes, 0, numBytesChunk);
+            DataChunk dataChunk = new DataChunk(hash, dataInfo.titles.get(0), (int)chunkNumber, size, bytes, connectionNode);
+            // Send the chunk
+            sendChunk(dataChunk, toNode);
+        } catch (IOException e) {
+            LogSystem.logErrorMessage("Can't read chunk");
+        }
     }
 
     private void sendQuery(String hash, int chunk, ConnectionNode nodeToSend) {
@@ -332,6 +307,8 @@ class DownloadStatus {
 
     @Override
     public String toString() {
+        if (numChunksDownloaded == 0)
+            return "pending";
         return numChunksDownloaded + " / " + maxChunks;
     }
 }

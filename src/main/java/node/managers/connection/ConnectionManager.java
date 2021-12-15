@@ -6,11 +6,11 @@ import common.Query;
 import java.util.List;
 
 public interface ConnectionManager {
-    public void setConnectionNode(ConnectionNode connectionNode);
-    public boolean connect(String host);
-    public boolean connect(String host, int port);
-    public void forceRemoveConnection(ConnectionNode nodeToRemove);
-    public void processConnexion(Query connectionQuery);
-    public void notifyConnection(Query connectionResponse);
-    public List<ConnectionNode> getConnectedNodesList();
+    void setConnectionNode(ConnectionNode connectionNode);
+    boolean connect(String host);
+    boolean connect(String host, int port);
+    void forceRemoveConnection(ConnectionNode nodeToRemove);
+    void processConnexion(Query connectionQuery);
+    void notifyConnection(Query connectionResponse);
+    List<ConnectionNode> getConnectedNodesList();
 }

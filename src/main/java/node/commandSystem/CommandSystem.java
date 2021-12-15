@@ -154,15 +154,20 @@ public class CommandSystem {
         Scanner scanner = new Scanner(System.in);
         int indexOption = -1;
         printOptions();
-        while (indexOption < 0 || indexOption > options.size()) {
-            System.out.print("Select the content index: ");
-            indexOption = scanner.nextInt();
-            if (indexOption < 0 || indexOption > options.size())  {
-                errorMessage("bad index \"" + indexOption + "\"");
+        try {
+            while (indexOption < 0 || indexOption > options.size()) {
+                System.out.print("Select the content index: ");
+                indexOption = scanner.nextInt();
+                if (indexOption < 0 || indexOption > options.size())  {
+                    errorMessage("bad index \"" + indexOption + "\"");
+                } else {
+                    String hash = options.get(indexOption).hash;
+                    node.download(hash);
+                }
             }
+        } catch (Exception e) {
+            errorMessage("bad index \"" + indexOption + "\"");
         }
-        String hash = options.get(indexOption).hash;
-        node.download(hash);
     }
 
     private void editOptionsCommand() {
@@ -190,10 +195,18 @@ public class CommandSystem {
                 int numericValue = Integer.parseInt(value);
                 if (param.equals("numBytesChunk")) {
                     NodeConfiguration.numBytesChunk = numericValue;
-                } else if (param.equals("numMaxDownloadChunksThreads")) {
-                    NodeConfiguration.numMaxDownloadChunksThreads = numericValue;
+                } else if (param.equals("numMaxDownloadThreads")) {
+                    NodeConfiguration.numMaxDownloadThreads = numericValue;
                 } else if (param.equals("numMaxUploadThreads")) {
                     NodeConfiguration.numMaxUploadThreads = numericValue;
+                } else if (param.equals("chunkWindowSize")) {
+                    NodeConfiguration.chunkWindowSize = numericValue;
+                } else if (param.equals("windowsTimeout")) {
+                    NodeConfiguration.windowsTimeout = numericValue;
+                }else if (param.equals("maxTryWindow")) {
+                    NodeConfiguration.maxTryWindow = numericValue;
+                }else if (param.equals("connectionResponseTimeout")) {
+                    NodeConfiguration.connectionResponseTimeout = numericValue;
                 } else {
                     errorMessage("bad param \"" + param + "\"");
                 }
@@ -243,6 +256,9 @@ public class CommandSystem {
 
     private void printOptions() {
         int index = 0;
+        if (options == null) {
+            options = new ArrayList<>();
+        }
         for (DataInfo contentInfo : options) {
             System.out.println(index + ": " + contentInfo);
             index +=1;

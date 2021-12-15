@@ -148,7 +148,7 @@ public class DFSManager implements SearchManager {
                     try {
                         objectToNotify.wait();
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        LogSystem.logInfoMessage("Interruption");
                     }
                 }
             }
@@ -184,10 +184,12 @@ public class DFSManager implements SearchManager {
     }
 
     private boolean sendQuery(Query query, ConnectionNode nodeToSend) {
+        // Send a search query
         try {
             LogSystem.logInfoMessage("Send query search to the next node");
             nodeToSend.send(query);
         } catch (RemoteException e) {
+            // If a error occurred remove the node connection
             LogSystem.logErrorMessage("Can't send the query");
             nodeManager.forceRemoveConnection(nodeToSend);
             return false;

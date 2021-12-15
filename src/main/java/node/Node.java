@@ -6,7 +6,9 @@ import node.logs.LogSystem;
 import node.managers.NodeManager;
 import node.managers.files.FileManager;
 import node.managers.files.FileSystemManger;
+import org.json.simple.parser.ParseException;
 
+import java.io.IOException;
 import java.rmi.AlreadyBoundException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -25,18 +27,20 @@ public class Node {
     public static boolean isRunning = true;
 
     public Node(NodeManager nodeManager, FileManager fileManager, int port) throws RemoteException, AlreadyBoundException {
+        loadConfigurations();
         this.nodeManager = nodeManager;
         this.fileManager = fileManager;
         this.connectionNode = new NetworkConnexionNode(this.nodeManager);
         this.nodeManager.setConnectionNode(this.connectionNode);
         this.port = port;
         this.registry = startRegistry(port);
+
         registryNode();
     }
 
-    public Node(int port) throws RemoteException, AlreadyBoundException {
-        this.fileManager = new FileSystemManger("contentsClient");
-        this.nodeManager = new NodeManager(this.fileManager);
+    public Node(int port) throws RemoteException {
+        loadConfigurations();
+        this.nodeManager = new NodeManager();
         this.connectionNode = new NetworkConnexionNode(this.nodeManager);
         this.nodeManager.setConnectionNode(this.connectionNode);
         this.port = port;
@@ -84,6 +88,18 @@ public class Node {
 
     public String getDownloadStatus() {
         return nodeManager.getDownloadStatus();
+    }
+
+    private void loadConfigurations() {
+        try {
+            NodeConfiguration.loadConfigurations();
+        } catch (IOException e) {
+            LogSystem.logErrorMessage("Can load the configurations");
+            System.exit(-1);
+        } catch (ParseException e) {
+            LogSystem.logErrorMessage("Configuration parse file error");
+            System.exit(-1);
+        }
     }
 
     private void registryNode()  {

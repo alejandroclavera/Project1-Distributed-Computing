@@ -227,9 +227,9 @@ public class FileSystemManger implements FileManager{
                 randomAccessFile.write(dataChunk.chunkBytes, 0, dataChunk.size);
                 randomAccessFile.close();
             } catch (FileNotFoundException e) {
-                e.printStackTrace();
+                LogSystem.logErrorMessage("Can't write in tmp file, not found");
             } catch (IOException e) {
-                e.printStackTrace();
+                LogSystem.logErrorMessage("Can't write in tmp file (IOExcepetion)");
             }
         }
     }
@@ -254,9 +254,11 @@ public class FileSystemManger implements FileManager{
     public void validate(DataInfo dataInfo) {
         synchronized (contentToValidate) {
             // Add the content to the list to validate it
-            contentToValidate.add(dataInfo);
-            // Notify to validator
-            contentToValidate.notify();
+            synchronized (contentToValidate) {
+                contentToValidate.add(dataInfo);
+                // Notify to validator
+                contentToValidate.notify();
+            }
         }
     }
 
@@ -287,8 +289,13 @@ public class FileSystemManger implements FileManager{
     private void validator() {
         while (Node.isRunning) {
             List<DataInfo> contentsValidated = new ArrayList<>();
+            List<DataInfo> toValidate;
+            synchronized (contentToValidate) {
+                // Copy the list to avoid errors
+                toValidate = new ArrayList<>(contentToValidate);
+            }
             // Try the validate each content of the list
-            for (DataInfo dataInfo : contentToValidate) {
+            for (DataInfo dataInfo : toValidate) {
                 String path = Paths.get(contentsDirectoryPath, dataInfo.titles.get(0)).toString();
                 File contentFile = new File(path);
                 // Validate the content if the file exists
@@ -300,7 +307,7 @@ public class FileSystemManger implements FileManager{
                         if (hash.equals(dataInfo.hash)) {
                             // Add the content to the contents registry
                             contentsMap.put(dataInfo.hash, dataInfo);
-                            LogSystem.logInfoMessage("content validated");
+                            LogSystem.logInfoMessage("content :" + dataInfo.titles.get(0) + " validated");
                         } else {
                             // If the hash aren't equals -> security problem
                             contentFile.delete();
@@ -308,16 +315,16 @@ public class FileSystemManger implements FileManager{
                         }
                         contentsValidated.add(dataInfo);
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        LogSystem.logErrorMessage("Can't validate the content (IOException)");
                     } catch (NoSuchAlgorithmException e) {
-                        e.printStackTrace();
+                        LogSystem.logErrorMessage("Can't validate the content (Bad hash algorithm)");
                     }
                 }
             }
             synchronized (contentToValidate) {
                 // Remove the data info of the contents validated
                 contentToValidate.removeAll(contentsValidated);
-                if (contentToValidate.size() == 0) {
+                if (contentsValidated.size() == 0) {
                     // if the thread don't have contents to validate wait.
                     try {
                         contentToValidate.wait(1000);
