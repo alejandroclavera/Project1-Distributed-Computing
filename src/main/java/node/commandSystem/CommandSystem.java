@@ -5,6 +5,8 @@ import common.DataInfo;
 import node.Node;
 import node.NodeConfiguration;
 import node.managers.NodeManager;
+import node.managers.ws.Status;
+import node.managers.ws.WSClientManager;
 
 
 import java.io.IOException;
@@ -94,7 +96,11 @@ public class CommandSystem {
                 node.recognizeContents();
             } else if (command.equals("addMetadata")) {
                 addMetadataCommand();
-            } else if(command.equals("exit")) {
+            } else if (command.equals("signup")) {
+                signupCommand();
+            }else if (command.equals("signing")) {
+                signingCommand();
+            }else if(command.equals("exit")) {
                 exit = true;
             } else {
                 errorMessage("command \"" + arguments[0] + "\"");
@@ -102,6 +108,38 @@ public class CommandSystem {
             resetColors();
         }
         System.out.println("Bye");
+    }
+
+    private void signupCommand() {
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("User name: ");
+        String userName = scanner.nextLine();
+        System.out.print("Password: ");
+        String password = scanner.nextLine();
+        Status signingStatus = new WSClientManager().signup(userName, password);
+        if (signingStatus == Status.OK) {
+            System.out.println("User registered");
+        } else if (signingStatus == Status.BAD_REQUEST) {
+            System.out.println("Invalid username or password");
+        } else {
+            System.out.println("Internal server error");
+        }
+    }
+
+    private void signingCommand() {
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("User name: ");
+        String userName = scanner.nextLine();
+        System.out.print("Password: ");
+        String password = scanner.nextLine();
+        Status signingStatus = new WSClientManager().signing(userName, password);
+        if (signingStatus == Status.OK) {
+            System.out.println("User logged");
+        } else if (signingStatus == Status.BAD_REQUEST) {
+            System.out.println("Invalid username or password");
+        } else {
+            System.out.println("Internal server error");
+        }
     }
 
     private void connectCommand(String[] arguments) {
