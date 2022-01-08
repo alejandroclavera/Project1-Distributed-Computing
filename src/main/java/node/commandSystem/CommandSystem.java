@@ -4,8 +4,7 @@ package node.commandSystem;
 import common.DataInfo;
 import node.Node;
 import node.NodeConfiguration;
-import node.managers.NodeManager;
-import node.managers.ws.Status;
+import ws.Status;
 import node.managers.ws.WSClientManager;
 
 

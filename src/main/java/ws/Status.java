@@ -1,4 +1,4 @@
-package node.managers.ws;
+package ws;
 
 public enum Status {
     OK,

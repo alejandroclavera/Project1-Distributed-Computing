@@ -1,8 +1,7 @@
 package node.managers.ws;
 
 import common.DataInfo;
-
-import java.io.IOException;
+import ws.Status;
 
 public interface WSManager {
     public Status signup(String userName, String password);

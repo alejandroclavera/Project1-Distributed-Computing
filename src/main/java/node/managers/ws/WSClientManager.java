@@ -2,11 +2,13 @@ package node.managers.ws;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import java.io.IOException;;
+import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.util.HashMap;
 
 import common.DataInfo;
+import ws.Response;
+import ws.Status;
+import ws.WSClient;
 
 
 public class WSClientManager implements WSManager {

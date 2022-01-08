@@ -14,6 +14,9 @@ public class DataInfo implements Serializable {
     public final long size;
     public final HashMap<String, String> metadata;
     public List<ConnectionNode> providers;
+    private boolean isNew;
+    private boolean isUpdated;
+    private boolean isDeleted;
 
     public DataInfo(String hash, HashMap<String, String> metadata) {
        this(hash, 0, metadata);

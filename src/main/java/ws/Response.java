@@ -1,4 +1,4 @@
-package node.managers.ws;
+package ws;
 
 import org.json.simple.JSONObject;
 

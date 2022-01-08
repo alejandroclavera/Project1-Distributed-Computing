@@ -11,6 +11,9 @@ import node.managers.files.FileManager;
 import node.managers.files.FileSystemManger;
 import node.managers.search.DFSManager;
 import node.managers.search.SearchManager;
+import node.managers.ws.WSClientManager;
+import node.managers.ws.WSManager;
+import ws.Status;
 
 
 import java.io.FileInputStream;
@@ -25,12 +28,14 @@ public class NodeManager {
     private DownloadManager downloadManager;
     private ConnectionManager connectionManager;
     private FileManager fileManager;
+    private WSManager wsManager;
 
     public NodeManager(FileManager fileManager) {
         this.fileManager = fileManager;
         this.searchManager = new DFSManager(this);
         this.downloadManager = new SplitDownloadManager(this);
         this.connectionManager = new SimpleConnection();
+        this.wsManager = new WSClientManager();
     }
 
     public NodeManager() {
@@ -173,5 +178,26 @@ public class NodeManager {
 
     public void recogniceContents() {
         fileManager.recognizeContents();
+    }
+
+    // OPERATIONS WITH WS
+    public Status signup(String userName, String password) {
+        return wsManager.signup(userName, password);
+    }
+
+    public Status signing(String userName, String password) {
+        return wsManager.signing(userName, password);
+    }
+
+    public Status createNewContentInfo(DataInfo dataInfo) {
+        return wsManager.createNewContent(dataInfo);
+    }
+
+    public Status updateContentInfo(String id, DataInfo info) {
+        return wsManager.updateContent(id, info);
+    }
+
+    public Status removeContentInfo(String id) {
+        return wsManager.deleteContent(id);
     }
 }
