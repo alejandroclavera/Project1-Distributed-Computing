@@ -22,6 +22,7 @@ public class NodeConfiguration {
     public static int windowsTimeout = 25;
     public static int maxTryWindow = 3;
     public static int connectionResponseTimeout = 15;
+    public static int wsNodeID = -1;
 
 
     public static void saveConfiguration() throws IOException {
@@ -42,6 +43,7 @@ public class NodeConfiguration {
         configurationJSON.put("maxTryWindow", maxTryWindow);
         configurationJSON.put("windowsTimeout", windowsTimeout);
         configurationJSON.put("connectionResponseTimeout", connectionResponseTimeout);
+        configurationJSON.put("wsNodeID", wsNodeID);
 
 
         // Write the jsonObject to a file
@@ -69,6 +71,7 @@ public class NodeConfiguration {
             maxTryWindow = (int)(long) jsonObject.get("maxTryWindow");
             windowsTimeout = (int)(long) jsonObject.get("windowsTimeout");
             connectionResponseTimeout = (int)(long) jsonObject.get("connectionResponseTimeout");
+            wsNodeID = (int)(long) jsonObject.get("wsNodeID");
         }
     }
 

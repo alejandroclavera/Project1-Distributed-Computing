@@ -1,5 +1,6 @@
 package node.managers.ws;
 
+import node.NodeConfiguration;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import java.io.IOException;
@@ -14,6 +15,25 @@ import ws.WSClient;
 public class WSClientManager implements WSManager {
     private final String apiUrl = "http://127.0.0.1:5000/";
     private Response lastResponse = null;
+    private static String user = "";
+
+    public WSClientManager() {
+        // Generate id
+        if (NodeConfiguration.wsNodeID == -1) {
+            Response response;
+            try {
+                response = WSClient.generateID();
+                Status status = getStatus(response);
+                if (status == Status.OK) {
+                    int wsID = (int)(long)response.jsonObject.get("id");
+                    NodeConfiguration.wsNodeID = wsID;
+                    NodeConfiguration.saveConfiguration();
+                }
+            } catch (IOException e) {
+               NodeConfiguration.wsNodeID = -1;
+            }
+        }
+    }
 
     @Override
     public Status signup(String userName, String password) {
@@ -23,8 +43,11 @@ public class WSClientManager implements WSManager {
         } catch (IOException e) {
             return Status.CONNECTION_ERROR;
         }
-
-        return getStatus(response);
+        // Store the user if it is authenticatedi
+        Status status = getStatus(response);
+        if (status == Status.OK)
+            WSClientManager.user = userName;
+        return status;
     }
 
     @Override
@@ -35,18 +58,32 @@ public class WSClientManager implements WSManager {
         } catch (IOException e) {
             return Status.CONNECTION_ERROR;
         }
-        return getStatus(response);
+        user = userName;
+        // Store the user if it is authenticated
+        Status status = getStatus(response);
+        if (status == Status.OK)
+            WSClientManager.user = userName;
+        return status;
     }
 
     public Status createNewContent(DataInfo dataInfo) {
         // Use the web service client to create the new content information
         Response response = null;
         try {
-            response = WSClient.createContent(generateRequestBody(dataInfo));
+            dataInfo.owner = user;
+            JSONObject jsonBody = generateRequestBody(dataInfo);
+            jsonBody.put("node", NodeConfiguration.wsNodeID);
+            response = WSClient.createContent(jsonBody);
         } catch (IOException e) {
             return Status.CONNECTION_ERROR;
         }
-        return getStatus(response);
+        lastResponse = response;
+        Status status = getStatus(response);
+        if (status == status.OK) {
+            String id = (String) response.jsonObject.get("id").toString();
+            dataInfo.wsId = id;
+        }
+        return status;
     }
 
     public Status updateContent(String id, DataInfo dataInfo) {
@@ -57,6 +94,7 @@ public class WSClientManager implements WSManager {
         } catch (IOException e) {
             return Status.CONNECTION_ERROR;
         }
+        lastResponse = response;
         return getStatus(response);
     }
 
@@ -68,7 +106,13 @@ public class WSClientManager implements WSManager {
         } catch (IOException e) {
             return Status.CONNECTION_ERROR;
         }
+        lastResponse = response;
         return getStatus(response);
+    }
+
+    @Override
+    public String getUser() {
+        return WSClientManager.user;
     }
 
     private JSONObject generateRequestBody(DataInfo dataInfo) {

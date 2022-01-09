@@ -7,6 +7,7 @@ import node.managers.NodeManager;
 import node.managers.files.FileManager;
 import node.managers.files.FileSystemManger;
 import org.json.simple.parser.ParseException;
+import ws.Status;
 
 import java.io.IOException;
 import java.rmi.AlreadyBoundException;
@@ -64,6 +65,18 @@ public class Node {
         return nodeManager.getContentsList();
     }
 
+    public List<DataInfo> getNewContentList() {
+        return nodeManager.getNewContentList();
+    }
+
+    public List<DataInfo> getUpdatedContent() {
+        return nodeManager.getContentUpdatedList();
+    }
+
+    public List<DataInfo> getDeletedContent() {
+        return nodeManager.getContentDeletedList();
+    }
+
     public void download(String hash){
         nodeManager.downloadContent(hash);
     }
@@ -100,6 +113,18 @@ public class Node {
             LogSystem.logErrorMessage("Configuration parse file error");
             System.exit(-1);
         }
+    }
+
+    public Status createNewContentInfo(DataInfo dataInfo) {
+        return nodeManager.createNewContentInfo(dataInfo);
+    }
+
+    public Status updateContentInfo(DataInfo dataInfo) {
+        return nodeManager.updateContentInfo(dataInfo.wsId, dataInfo);
+    }
+
+    public Status deleteContentInfo(DataInfo dataInfo) {
+        return nodeManager.removeContentInfo(dataInfo);
     }
 
     private void registryNode()  {

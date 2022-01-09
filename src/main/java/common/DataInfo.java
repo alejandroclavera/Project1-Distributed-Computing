@@ -12,11 +12,13 @@ public class DataInfo implements Serializable {
     public final String hash;
     public List<String> titles;
     public final long size;
-    public final HashMap<String, String> metadata;
     public List<ConnectionNode> providers;
-    private boolean isNew;
-    private boolean isUpdated;
-    private boolean isDeleted;
+    public String wsId = "";
+    public HashMap<String, String> metadata;
+    public boolean isNew = false;
+    public boolean isUpdated = false;
+    public boolean isDeleted = false;
+    public String owner = "";
 
     public DataInfo(String hash, HashMap<String, String> metadata) {
        this(hash, 0, metadata);
@@ -39,6 +41,7 @@ public class DataInfo implements Serializable {
                 "hash='" + hash.substring(0, 15)  + "..." +'\'' +
                 ", title='" + titles + '\'' +
                 ", metadata=" + metadata +
+                " wsID= " + wsId +
                 '}' + '\n';
     }
 
@@ -59,7 +62,34 @@ public class DataInfo implements Serializable {
         dataInfoJson.put("title", titles);
         dataInfoJson.put("size", size);
         dataInfoJson.put("metadata", metadata);
-
+        dataInfoJson.put("isNew", isNew);
+        dataInfoJson.put("isUpdated", isUpdated);
+        dataInfoJson.put("isDeleted", isDeleted);
+        dataInfoJson.put("owner", owner);
+        dataInfoJson.put("wsId", wsId);
         return dataInfoJson;
+    }
+
+    public static DataInfo fromJSON(JSONObject dataInfoJson) {
+        // Get dataInfo form JSON
+        String hash = (String) dataInfoJson.get("hash");
+        List<String> titles = (ArrayList)dataInfoJson.get("title");
+        long size = (long) dataInfoJson.get("size");
+        HashMap<String, String> metadata = (HashMap<String, String>) dataInfoJson.get("metadata");
+        boolean isNew = (boolean) dataInfoJson.get("isNew");
+        boolean isUpdated = (boolean) dataInfoJson.get("isUpdated");
+        boolean isDeleted = (boolean) dataInfoJson.get("isDeleted");
+        String owner = (String) dataInfoJson.get("owner");
+        String wsId = (String) dataInfoJson.get("wsID");
+
+        // Create dataInfo object
+        DataInfo dataInfo = new DataInfo(hash, size, metadata);
+        dataInfo.isNew = isNew;
+        dataInfo.isUpdated = isUpdated;
+        dataInfo.isDeleted = isDeleted;
+        dataInfo.titles = titles;
+        dataInfo.owner = owner;
+        dataInfo.wsId = wsId;
+        return dataInfo;
     }
 }

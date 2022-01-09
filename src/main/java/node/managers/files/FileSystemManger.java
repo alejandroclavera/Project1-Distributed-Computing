@@ -5,6 +5,7 @@ import common.DataInfo;
 import node.Node;
 import node.NodeConfiguration;
 import node.logs.LogSystem;
+import node.managers.NodeManager;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -23,11 +24,25 @@ import java.util.List;
 public class FileSystemManger implements FileManager{
     private String contentsDirectoryPath;
     private HashMap<String, DataInfo> contentsMap;
+    private List<DataInfo> newContents;
     private List<DataInfo> contentToValidate;
+    private NodeManager nodeManager;
+
+
+    public FileSystemManger(String contentsDirectoryPath, NodeManager nodeManager) {
+        this.contentsDirectoryPath = contentsDirectoryPath;
+        this.contentsMap = new HashMap<>();
+        this.newContents = new ArrayList<>();
+        this.contentToValidate = new ArrayList<>();
+        recognizeContents();
+        startValidator();
+        this.nodeManager = nodeManager;
+    }
 
     public FileSystemManger(String contentsDirectoryPath) {
         this.contentsDirectoryPath = contentsDirectoryPath;
         this.contentsMap = new HashMap<>();
+        this.newContents = new ArrayList<>();
         this.contentToValidate = new ArrayList<>();
         recognizeContents();
         startValidator();
@@ -118,8 +133,10 @@ public class FileSystemManger implements FileManager{
                     // Create new data with the content information
                     dataInfo = new DataInfo(hash, size, metadata);
                     dataInfo.titles.add(contentName);
+                    dataInfo.isNew = true;
                     // Add info to the json info
                     dataInfoList.add(dataInfo.toJson());
+                    newContents.add(dataInfo);
                     newContent = true;
                 }
                 contentsMap.put(hash, dataInfo);
@@ -147,6 +164,45 @@ public class FileSystemManger implements FileManager{
     }
 
     @Override
+    public List<DataInfo> getNewContentsList() {
+        JSONObject jsonObject = getContentsJson();
+        JSONArray jsonArray = (JSONArray) jsonObject.get("dataInfo");
+        List<DataInfo> newContentsDataInfo = new ArrayList<>();
+        jsonArray.forEach(json -> {
+            DataInfo datainfo = DataInfo.fromJSON((JSONObject) json);
+            if (datainfo.isNew)
+                newContentsDataInfo.add(datainfo);
+        });
+        return newContentsDataInfo;
+    }
+
+    @Override
+    public List<DataInfo> getUpdatedContent() {
+        JSONObject jsonObject = getContentsJson();
+        JSONArray jsonArray = (JSONArray) jsonObject.get("dataInfo");
+        List<DataInfo> newContentsDataInfo = new ArrayList<>();
+        jsonArray.forEach(json -> {
+            DataInfo datainfo = DataInfo.fromJSON((JSONObject) json);
+            if (datainfo.isUpdated && datainfo.owner.equals(nodeManager.getUserName()))
+                newContentsDataInfo.add(datainfo);
+        });
+        return newContentsDataInfo;
+    }
+
+    @Override
+    public List<DataInfo> getDeletedContent() {
+        JSONObject jsonObject = getContentsJson();
+        JSONArray jsonArray = (JSONArray) jsonObject.get("dataInfo");
+        List<DataInfo> newContentsDataInfo = new ArrayList<>();
+        jsonArray.forEach(json -> {
+            DataInfo datainfo = DataInfo.fromJSON((JSONObject) json);
+            if (datainfo.isDeleted && datainfo.owner.equals(nodeManager.getUserName()))
+                newContentsDataInfo.add(datainfo);
+        });
+        return newContentsDataInfo;
+    }
+
+    @Override
     public FileInputStream getContent(String hash) {
         FileInputStream fileInputStream;
         if (!hash.contains(hash))
@@ -159,6 +215,21 @@ public class FileSystemManger implements FileManager{
             return null;
         }
         return fileInputStream;
+    }
+
+    @Override
+    public void updateContent(DataInfo dataInfo) {
+        JSONObject contentsJson = getContentsJson();
+        List<String> hashes = (List<String>) contentsJson.get("hashes");
+        JSONArray dataInfos = (JSONArray) contentsJson.get("dataInfo");
+        int dataInfoIndex = hashes.indexOf(dataInfo.hash);
+        dataInfos.remove(dataInfoIndex);
+        dataInfos.add(dataInfoIndex, dataInfo.toJson());
+        try {
+            writeContentsInJson(contentsJson);
+        } catch (IOException e) {
+            System.out.println("Can't update the content");
+        }
     }
 
     @Override
@@ -184,7 +255,6 @@ public class FileSystemManger implements FileManager{
             FileOutputStream fileOutputStream = new FileOutputStream(contentPath);
             fileOutputStream.write(allBytes);
             fileOutputStream.close();
-            // Add to the hashmap (TODO)
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -201,7 +271,6 @@ public class FileSystemManger implements FileManager{
                 fileOutputStream.write(dataChunk.chunkBytes, 0, dataChunk.size);
             }
             fileOutputStream.close();
-            // Add to the hashmap (TODO)
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {

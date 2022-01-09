@@ -75,6 +75,27 @@ public class WSClient {
         return new Response(statusCode, json);
     }
 
+    public static Response generateID() throws IOException {
+        HttpURLConnection conn = openHttpConnection(apiUrl + "node/register");
+
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Content-Type", "application/json");
+
+        conn.setDoOutput(true);
+        OutputStream os = conn.getOutputStream();
+        os.write("{\"public_key\": 0}".getBytes());
+        os.flush();
+
+        // Get json Response body and close the connection
+        JSONObject json = getResponseJSONBody(conn);
+        conn.disconnect();
+
+        if (json == null)
+            return null;
+
+        return new Response(conn.getResponseCode(), json);
+    }
+
     public static Response signup(String userName, String password) throws IOException {
         HttpURLConnection conn = openHttpConnection(apiUrl + "user/signup/");
         return authRequest(userName, password, conn);

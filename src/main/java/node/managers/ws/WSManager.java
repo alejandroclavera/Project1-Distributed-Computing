@@ -9,4 +9,5 @@ public interface WSManager {
     Status updateContent(String id, DataInfo dataInfo);
     Status createNewContent(DataInfo dataInfo);
     Status deleteContent(String id);
+    public String getUser();
 }

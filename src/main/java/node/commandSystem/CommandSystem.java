@@ -99,6 +99,10 @@ public class CommandSystem {
                 signupCommand();
             }else if (command.equals("signing")) {
                 signingCommand();
+            }else if (command.equals("addContent")) {
+                addNewContentInWS();
+            }else if (command.equals("updateContent")) {
+                updateContentInWS();
             }else if(command.equals("exit")) {
                 exit = true;
             } else {
@@ -281,6 +285,57 @@ public class CommandSystem {
             stop = !res.equals("y");
         }
         node.addMetadata(nodeContents.get(indexOption).hash, metadata);
+        Status status = node.updateContentInfo(nodeContents.get(indexOption));
+        printMessageFromStatus(status);
+    }
+
+    private void addNewContentInWS() {
+        Scanner scanner = new Scanner(System.in);
+        int indexOption = -1;
+        printNewNodeContents();
+        while (indexOption < 0 || indexOption > node.getNewContentList().size()) {
+            System.out.print("Select the content index: ");
+            indexOption = scanner.nextInt();
+            if (indexOption < 0 || indexOption > node.getNewContentList().size())  {
+                errorMessage("bad index \"" + indexOption + "\"");
+            }
+        }
+        DataInfo dataInfo = node.getNewContentList().get(indexOption);
+        Status status = node.createNewContentInfo(dataInfo);
+        printMessageFromStatus(status);
+    }
+
+    private void updateContentInWS() {
+        Scanner scanner = new Scanner(System.in);
+        int indexOption = -1;
+        printUpdatedContents();
+        List<DataInfo> updatedContents = node.getUpdatedContent();
+        while (indexOption < 0 || indexOption > updatedContents.size()) {
+            System.out.print("Select the content index: ");
+            indexOption = scanner.nextInt();
+            if (indexOption < 0 || indexOption > updatedContents.size())  {
+                errorMessage("bad index \"" + indexOption + "\"");
+            }
+        }
+        DataInfo dataInfo = updatedContents.get(indexOption);
+        Status status = node.updateContentInfo(dataInfo);
+        printMessageFromStatus(status);
+    }
+
+    private void deleteContentInWS() {
+        Scanner scanner = new Scanner(System.in);
+        int indexOption = -1;
+        printNewNodeContents();
+        while (indexOption < 0 || indexOption > node.getNewContentList().size()) {
+            System.out.print("Select the content index: ");
+            indexOption = scanner.nextInt();
+            if (indexOption < 0 || indexOption > node.getNewContentList().size())  {
+                errorMessage("bad index \"" + indexOption + "\"");
+            }
+        }
+        DataInfo dataInfo = node.getNewContentList().get(indexOption);
+        Status status = node.deleteContentInfo(dataInfo);
+        printMessageFromStatus(status);
     }
 
     private void errorMessage(String message) {
@@ -308,6 +363,42 @@ public class CommandSystem {
         for (DataInfo dataInfo : node.getContentList()) {
             System.out.println(index + ": " + dataInfo);
             index += 1;
+        }
+    }
+
+    private void printNewNodeContents() {
+        System.out.println("New Contents");
+        int index = 0;
+        for (DataInfo dataInfo : node.getNewContentList()) {
+            System.out.println(index + ": " + dataInfo);
+            index += 1;
+        }
+    }
+
+    private void printUpdatedContents() {
+        System.out.println("Updated Contents");
+        int index = 0;
+        for (DataInfo dataInfo : node.getUpdatedContent()) {
+            System.out.println(index + ": " + dataInfo);
+            index += 1;
+        }
+    }
+
+    private void printMessageFromStatus(Status status) {
+        if (status == Status.CONNECTION_ERROR) {
+            errorMessage("Can't connect with the WS");
+        } else if (status == Status.NOT_FOUND) {
+            errorMessage("Not found");
+        } else if (status == Status.BAD_REQUEST) {
+            errorMessage("bad request");
+        } else if (status == Status.UNAUTHORIZED) {
+            errorMessage("Must be in logged status");
+        } else if (status == Status.FORBIDDEN) {
+            errorMessage("You do not have permissions to do this operation");
+        } else if(status == Status.RESPONSE_BODY_ERROR) {
+            errorMessage("A error in the WS response");
+        } else if (status == Status.SERVER_ERROR) {
+            errorMessage("Internal server error");
         }
     }
 }

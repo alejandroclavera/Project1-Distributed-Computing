@@ -39,10 +39,11 @@ public class NodeManager {
     }
 
     public NodeManager() {
-        this.fileManager = new FileSystemManger(NodeConfiguration.contentDirectory);
+        this.fileManager = new FileSystemManger(NodeConfiguration.contentDirectory, this);
         this.searchManager = new DFSManager(this);
         this.downloadManager = new SplitDownloadManager(this);
         this.connectionManager = new SimpleConnection();
+        this.wsManager = new WSClientManager();
     }
 
     public void setConnectionNode(ConnectionNode connectionNode) {
@@ -50,6 +51,7 @@ public class NodeManager {
         connectionManager.setConnectionNode(connectionNode);
         searchManager.setConnectionNode(connectionNode);
         downloadManager.setConnectionNode(connectionNode);
+        this.wsManager = new WSClientManager();
     }
 
     public boolean connectTo(String host) {
@@ -151,9 +153,22 @@ public class NodeManager {
         return fileManager.getContentsList();
     }
 
+    public List<DataInfo> getNewContentList() {
+        return fileManager.getNewContentsList();
+    }
+
+    public List<DataInfo> getContentUpdatedList() {
+        return fileManager.getUpdatedContent();
+    }
+
+    public List<DataInfo> getContentDeletedList() {
+        return fileManager.getDeletedContent();
+    }
+
     public List<ConnectionNode> getConnectedNodesList() {
         return connectionManager.getConnectedNodesList();
     }
+
 
     public DataInfo getDataInfo(String hash) {
         // Get the data info of a file
@@ -190,14 +205,40 @@ public class NodeManager {
     }
 
     public Status createNewContentInfo(DataInfo dataInfo) {
-        return wsManager.createNewContent(dataInfo);
+        Status status = wsManager.createNewContent(dataInfo);
+
+        // If the content its created remove of the data structure
+        if (status == Status.OK){
+            dataInfo.isNew = false;
+            dataInfo.owner = getUserName();
+            fileManager.updateContent(dataInfo);
+        }
+        return status;
     }
 
     public Status updateContentInfo(String id, DataInfo info) {
-        return wsManager.updateContent(id, info);
+        Status status = wsManager.updateContent(id, info);
+        if (status == Status.OK){
+            info.isUpdated = true;
+        } else {
+            info.isUpdated = false;
+        }
+        fileManager.updateContent(info);
+        return status;
     }
 
-    public Status removeContentInfo(String id) {
-        return wsManager.deleteContent(id);
+    public Status removeContentInfo(DataInfo info) {
+        Status status = wsManager.deleteContent(info.wsId);
+        if (status == Status.OK){
+            info.isUpdated = true;
+        } else {
+            info.isUpdated = false;
+        }
+        fileManager.updateContent(info);
+        return status;
+    }
+
+    public String getUserName() {
+        return wsManager.getUser();
     }
 }
