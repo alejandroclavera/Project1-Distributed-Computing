@@ -135,7 +135,8 @@ public class NodeManager {
            }
         }
         dataInfo.fileDeleted = true;
-
+        // Update information of content
+        fileManager.updateContent(dataInfo);
     }
 
     public void addNewContent(String name, List<DataChunk> dataChunkList) {

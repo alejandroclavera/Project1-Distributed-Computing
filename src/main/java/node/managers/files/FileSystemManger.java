@@ -456,8 +456,8 @@ public class FileSystemManger implements FileManager{
             // If no contain the hash remove the hash
             if (!recognizedHashes.contains(hash)) {
                 int index = hashListJson.indexOf(hash);
-                hashListJson.remove(index);
-                namesListJson.remove(index);
+                //hashListJson.remove(index);
+                //namesListJson.remove(index);
                 JSONObject dataInfo = (JSONObject) dataInfos.get(index);
                 if ((Boolean) dataInfo.get("isDeleted")) {
                     dataInfos.remove(index);
