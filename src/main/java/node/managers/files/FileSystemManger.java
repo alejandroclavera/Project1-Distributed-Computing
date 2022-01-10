@@ -41,7 +41,6 @@ public class FileSystemManger implements FileManager{
 
     public FileSystemManger(String contentsDirectoryPath) {
         this.contentsDirectoryPath = contentsDirectoryPath;
-        this.contentsMap = new HashMap<>();
         this.newContents = new ArrayList<>();
         this.contentToValidate = new ArrayList<>();
         recognizeContents();
@@ -73,6 +72,7 @@ public class FileSystemManger implements FileManager{
     public void recognizeContents() {
         File contentsDirectory = new File(contentsDirectoryPath);
         File contentsJSON = new File(Paths.get(contentsDirectoryPath, "contents.json").toString());
+        this.contentsMap = new HashMap<>();
         JSONObject contentsJsonObject = null;
         List<String> recognizeHashes = new ArrayList<>();
         boolean newContent = false;
@@ -105,11 +105,8 @@ public class FileSystemManger implements FileManager{
                     int index = nameList.indexOf(contentName);
                     // Get the information of the dataInfo stored in the json file
                     JSONObject dataInfoJson = (JSONObject) dataInfoList.get(index);
-                    long size = (long) dataInfoJson.get("size");
-                    HashMap<String, String> metadata = (HashMap<String, String>) dataInfoJson.get("metadata");
-                    hash = hashList.get(index);
-                    dataInfo = new DataInfo(hash, size, metadata);
-                    dataInfo.titles.add(contentName);
+                    dataInfo = DataInfo.fromJSON(dataInfoJson);
+                    //dataInfo.titles.add(contentName);
                 } else {
                     hash = getHash(path.toString());
                     long size = 0;
@@ -139,10 +136,12 @@ public class FileSystemManger implements FileManager{
                     newContents.add(dataInfo);
                     newContent = true;
                 }
-                contentsMap.put(hash, dataInfo);
+                synchronized (contentsMap) {
+                    contentsMap.put(dataInfo.hash, dataInfo);
+                }
                 recognizeHashes.add(hash);
             } catch (Exception e) {
-                System.out.println("Error to get information of the content: " + contentName);
+                LogSystem.logErrorMessage("Error to get information of the content: " + contentName);
             }
         }
 
@@ -160,7 +159,10 @@ public class FileSystemManger implements FileManager{
 
     @Override
     public List<DataInfo> getContentsList() {
-        return new ArrayList<>(contentsMap.values());
+        recognizeContents();
+        List<DataInfo> dataInfoList = new ArrayList<>(contentsMap.values());
+        contentsMap = null;
+        return dataInfoList;
     }
 
     @Override
@@ -196,7 +198,7 @@ public class FileSystemManger implements FileManager{
         List<DataInfo> newContentsDataInfo = new ArrayList<>();
         jsonArray.forEach(json -> {
             DataInfo datainfo = DataInfo.fromJSON((JSONObject) json);
-            if (datainfo.isDeleted && datainfo.owner.equals(nodeManager.getUserName()))
+            if (datainfo.fileDeleted && !datainfo.isDeleted && datainfo.owner.equals(nodeManager.getUserName()))
                 newContentsDataInfo.add(datainfo);
         });
         return newContentsDataInfo;
@@ -239,7 +241,7 @@ public class FileSystemManger implements FileManager{
             FileOutputStream fileOutputStream = new FileOutputStream(contentPath);
             fileOutputStream.write(allBytes);
             fileOutputStream.close();
-            // Add to the hashmap (TODO)
+            recognizeContents();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -255,6 +257,7 @@ public class FileSystemManger implements FileManager{
             FileOutputStream fileOutputStream = new FileOutputStream(contentPath);
             fileOutputStream.write(allBytes);
             fileOutputStream.close();
+            recognizeContents();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -278,6 +281,18 @@ public class FileSystemManger implements FileManager{
         }
     }
 
+    @Override
+    public boolean deleteContent(DataInfo dataInfo) {
+        String path = Paths.get(contentsDirectoryPath, dataInfo.titles.get(0)).toString();
+        File file = new File(path);
+        if (file.delete()) {
+            LogSystem.logInfoMessage("Deleted the file: " + file.getName());
+        } else {
+            LogSystem.logErrorMessage("Failed to delete the file.");
+            return false;
+        }
+        return true;
+    }
 
     public void writeContentsInJson(JSONObject jsonObject) throws IOException {
         FileWriter jsonFile = new FileWriter(Paths.get(contentsDirectoryPath, "contents.json").toString());
@@ -314,7 +329,8 @@ public class FileSystemManger implements FileManager{
             long size = Files.size(Paths.get(contentFilePath));
             DataInfo dataInfo = new DataInfo(hash, size, null);
             dataInfo.titles.add(fileName);
-            contentsMap.put(hash, dataInfo);
+            //contentsMap.put(hash, dataInfo);
+            recognizeContents();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -333,16 +349,14 @@ public class FileSystemManger implements FileManager{
 
     @Override
     public void addMetadata(String hash, HashMap<String, String> metadata) {
-        DataInfo contentDataInfo = contentsMap.get(hash);
-        contentDataInfo.metadata.putAll(metadata);
-        JSONObject jsonObject = getContentsJson();
-        JSONArray jsonArray = new JSONArray();
-        for (DataInfo dataInfo : contentsMap.values()) {
-            jsonArray.add(dataInfo.toJson());
-        }
-        jsonObject.put("dataInfo", jsonArray);
+        JSONObject contentsJson = getContentsJson();
+        List<String> hashes = (List<String>) contentsJson.get("hashes");
+        JSONArray dataInfos = (JSONArray) contentsJson.get("dataInfo");
+        int dataInfoIndex = hashes.indexOf(hash);
+        DataInfo dataInfo = DataInfo.fromJSON((JSONObject) dataInfos.get(dataInfoIndex));
+        dataInfo.metadata.putAll(metadata);
         try {
-            writeContentsInJson(jsonObject);
+            writeContentsInJson(contentsJson);
         } catch (IOException e) {
             LogSystem.logErrorMessage("can't add metadata to the content");
         }
@@ -444,8 +458,13 @@ public class FileSystemManger implements FileManager{
                 int index = hashListJson.indexOf(hash);
                 hashListJson.remove(index);
                 namesListJson.remove(index);
-                dataInfos.remove(index);
-                anyHashRemoved = true;
+                JSONObject dataInfo = (JSONObject) dataInfos.get(index);
+                if ((Boolean) dataInfo.get("isDeleted")) {
+                    dataInfos.remove(index);
+                    hashListJson.remove(index);
+                    namesListJson.remove(index);
+                    anyHashRemoved = true;
+                }
             }
         }
         return anyHashRemoved;

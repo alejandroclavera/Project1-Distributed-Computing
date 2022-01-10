@@ -15,6 +15,7 @@ public interface FileManager {
     List<DataInfo> getDeletedContent();
     FileInputStream getContent(String hash);
     void updateContent(DataInfo dataInfo);
+    boolean deleteContent(DataInfo dataInfo);
     void validate(DataInfo dataInfo);
     void addMetadata(String hash, HashMap<String, String> metadata);
     void addNewContent(String name, byte[] allBytes);

@@ -127,6 +127,17 @@ public class NodeManager {
         fileManager.addNewContent(name, bytes);
     }
 
+    public void deleteContent(DataInfo dataInfo) {
+        if (fileManager.deleteContent(dataInfo)) {
+           if (!dataInfo.wsId.equals("")) {
+               // Delete content in the WS
+               removeContentInfo(dataInfo);
+           }
+        }
+        dataInfo.fileDeleted = true;
+
+    }
+
     public void addNewContent(String name, List<DataChunk> dataChunkList) {
         // Allow to add new content from a list of DataChunk
         fileManager.addNewContent(name, dataChunkList);
@@ -219,9 +230,9 @@ public class NodeManager {
     public Status updateContentInfo(String id, DataInfo info) {
         Status status = wsManager.updateContent(id, info);
         if (status == Status.OK){
-            info.isUpdated = true;
-        } else {
             info.isUpdated = false;
+        } else {
+            info.isUpdated = true;
         }
         fileManager.updateContent(info);
         return status;
@@ -230,9 +241,9 @@ public class NodeManager {
     public Status removeContentInfo(DataInfo info) {
         Status status = wsManager.deleteContent(info.wsId);
         if (status == Status.OK){
-            info.isUpdated = true;
+            info.isDeleted = true;
         } else {
-            info.isUpdated = false;
+            info.isDeleted = false;
         }
         fileManager.updateContent(info);
         return status;

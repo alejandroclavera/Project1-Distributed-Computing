@@ -18,6 +18,7 @@ public class DataInfo implements Serializable {
     public boolean isNew = false;
     public boolean isUpdated = false;
     public boolean isDeleted = false;
+    public boolean fileDeleted = false;
     public String owner = "";
 
     public DataInfo(String hash, HashMap<String, String> metadata) {
@@ -65,6 +66,7 @@ public class DataInfo implements Serializable {
         dataInfoJson.put("isNew", isNew);
         dataInfoJson.put("isUpdated", isUpdated);
         dataInfoJson.put("isDeleted", isDeleted);
+        dataInfoJson.put("fileDeleted", fileDeleted);
         dataInfoJson.put("owner", owner);
         dataInfoJson.put("wsId", wsId);
         return dataInfoJson;
@@ -79,14 +81,16 @@ public class DataInfo implements Serializable {
         boolean isNew = (boolean) dataInfoJson.get("isNew");
         boolean isUpdated = (boolean) dataInfoJson.get("isUpdated");
         boolean isDeleted = (boolean) dataInfoJson.get("isDeleted");
+        boolean fileDeleted = (boolean) dataInfoJson.get("fileDeleted");
         String owner = (String) dataInfoJson.get("owner");
-        String wsId = (String) dataInfoJson.get("wsID");
+        String wsId = (String) dataInfoJson.get("wsId");
 
         // Create dataInfo object
         DataInfo dataInfo = new DataInfo(hash, size, metadata);
         dataInfo.isNew = isNew;
         dataInfo.isUpdated = isUpdated;
         dataInfo.isDeleted = isDeleted;
+        dataInfo.fileDeleted = fileDeleted;
         dataInfo.titles = titles;
         dataInfo.owner = owner;
         dataInfo.wsId = wsId;

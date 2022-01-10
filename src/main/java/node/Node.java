@@ -99,6 +99,10 @@ public class Node {
         nodeManager.addMetadata(hash, metadata);
     }
 
+    public void deleteContent(DataInfo dataInfo) {
+        nodeManager.deleteContent(dataInfo);
+    }
+
     public String getDownloadStatus() {
         return nodeManager.getDownloadStatus();
     }

@@ -95,6 +95,8 @@ public class CommandSystem {
                 node.recognizeContents();
             } else if (command.equals("addMetadata")) {
                 addMetadataCommand();
+            } else if (command.equals("deleteContent")) {
+                deleteContent();
             } else if (command.equals("signup")) {
                 signupCommand();
             }else if (command.equals("signing")) {
@@ -103,6 +105,8 @@ public class CommandSystem {
                 addNewContentInWS();
             }else if (command.equals("updateContent")) {
                 updateContentInWS();
+            }else if (command.equals("deleteContentWS")) {
+                deleteContentInWS();
             }else if(command.equals("exit")) {
                 exit = true;
             } else {
@@ -285,57 +289,91 @@ public class CommandSystem {
             stop = !res.equals("y");
         }
         node.addMetadata(nodeContents.get(indexOption).hash, metadata);
+        nodeContents = node.getContentList();
         Status status = node.updateContentInfo(nodeContents.get(indexOption));
         printMessageFromStatus(status);
+    }
+
+    private void deleteContent() {
+        Scanner scanner = new Scanner(System.in);
+        int indexOption = -1;
+        List<DataInfo> contents = node.getContentList();
+        if (contents.size() > 0) {
+            printNodeContents();
+            while (indexOption < 0 || indexOption > contents.size()) {
+                System.out.print("Select the content index: ");
+                indexOption = scanner.nextInt();
+                if (indexOption < 0 || indexOption > contents.size())  {
+                    errorMessage("bad index \"" + indexOption + "\"");
+                }
+            }
+            DataInfo dataInfo = contents.get(indexOption);
+            node.deleteContent(dataInfo);
+        }
     }
 
     private void addNewContentInWS() {
         Scanner scanner = new Scanner(System.in);
         int indexOption = -1;
-        printNewNodeContents();
-        while (indexOption < 0 || indexOption > node.getNewContentList().size()) {
-            System.out.print("Select the content index: ");
-            indexOption = scanner.nextInt();
-            if (indexOption < 0 || indexOption > node.getNewContentList().size())  {
-                errorMessage("bad index \"" + indexOption + "\"");
+        List<DataInfo> newContents = node.getNewContentList();
+        if (newContents.size() > 0) {
+            printNewNodeContents();
+            while (indexOption < 0 || indexOption > newContents.size()) {
+                System.out.print("Select the content index: ");
+                indexOption = scanner.nextInt();
+                if (indexOption < 0 || indexOption > newContents.size())  {
+                    errorMessage("bad index \"" + indexOption + "\"");
+                }
             }
+            DataInfo dataInfo = newContents.get(indexOption);
+            Status status = node.createNewContentInfo(dataInfo);
+            printMessageFromStatus(status);
+        } else {
+            System.out.println("Don't have contents to upload in the WS");
         }
-        DataInfo dataInfo = node.getNewContentList().get(indexOption);
-        Status status = node.createNewContentInfo(dataInfo);
-        printMessageFromStatus(status);
     }
 
     private void updateContentInWS() {
         Scanner scanner = new Scanner(System.in);
         int indexOption = -1;
-        printUpdatedContents();
         List<DataInfo> updatedContents = node.getUpdatedContent();
-        while (indexOption < 0 || indexOption > updatedContents.size()) {
-            System.out.print("Select the content index: ");
-            indexOption = scanner.nextInt();
-            if (indexOption < 0 || indexOption > updatedContents.size())  {
-                errorMessage("bad index \"" + indexOption + "\"");
+        if (updatedContents.size() > 0) {
+            printUpdatedContents();
+            while (indexOption < 0 || indexOption > updatedContents.size()) {
+                System.out.print("Select the content index: ");
+                indexOption = scanner.nextInt();
+                if (indexOption < 0 || indexOption > updatedContents.size())  {
+                    errorMessage("bad index \"" + indexOption + "\"");
+                }
             }
+            DataInfo dataInfo = updatedContents.get(indexOption);
+            Status status = node.updateContentInfo(dataInfo);
+            printMessageFromStatus(status);
+        } else  {
+            System.out.println("Don't have contents to update in the WS");
         }
-        DataInfo dataInfo = updatedContents.get(indexOption);
-        Status status = node.updateContentInfo(dataInfo);
-        printMessageFromStatus(status);
+
     }
 
     private void deleteContentInWS() {
         Scanner scanner = new Scanner(System.in);
         int indexOption = -1;
-        printNewNodeContents();
-        while (indexOption < 0 || indexOption > node.getNewContentList().size()) {
-            System.out.print("Select the content index: ");
-            indexOption = scanner.nextInt();
-            if (indexOption < 0 || indexOption > node.getNewContentList().size())  {
-                errorMessage("bad index \"" + indexOption + "\"");
+        List<DataInfo> contentsToDelete = node.getDeletedContent();
+        if (contentsToDelete.size() > 0) {
+            while (indexOption < 0 || indexOption > contentsToDelete.size()) {
+                printContentList(contentsToDelete);
+                System.out.print("Select the content index: ");
+                indexOption = scanner.nextInt();
+                if (indexOption < 0 || indexOption > contentsToDelete.size())  {
+                    errorMessage("bad index \"" + indexOption + "\"");
+                }
             }
+            DataInfo dataInfo = contentsToDelete.get(indexOption);
+            Status status = node.deleteContentInfo(dataInfo);
+            printMessageFromStatus(status);
+        } else {
+            System.out.println("Don't have contents to delete in the WS");
         }
-        DataInfo dataInfo = node.getNewContentList().get(indexOption);
-        Status status = node.deleteContentInfo(dataInfo);
-        printMessageFromStatus(status);
     }
 
     private void errorMessage(String message) {
@@ -379,6 +417,14 @@ public class CommandSystem {
         System.out.println("Updated Contents");
         int index = 0;
         for (DataInfo dataInfo : node.getUpdatedContent()) {
+            System.out.println(index + ": " + dataInfo);
+            index += 1;
+        }
+    }
+
+    private void printContentList(List<DataInfo> dataInfoList) {
+        int index = 0;
+        for (DataInfo dataInfo : dataInfoList) {
             System.out.println(index + ": " + dataInfo);
             index += 1;
         }
