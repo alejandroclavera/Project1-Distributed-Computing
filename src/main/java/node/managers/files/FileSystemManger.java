@@ -225,12 +225,15 @@ public class FileSystemManger implements FileManager{
         List<String> hashes = (List<String>) contentsJson.get("hashes");
         JSONArray dataInfos = (JSONArray) contentsJson.get("dataInfo");
         int dataInfoIndex = hashes.indexOf(dataInfo.hash);
-        dataInfos.remove(dataInfoIndex);
-        dataInfos.add(dataInfoIndex, dataInfo.toJson());
-        try {
-            writeContentsInJson(contentsJson);
-        } catch (IOException e) {
-            System.out.println("Can't update the content");
+        // update if find the data info
+        if (dataInfoIndex >= 0) {
+            dataInfos.remove(dataInfoIndex);
+            dataInfos.add(dataInfoIndex, dataInfo.toJson());
+            try {
+                writeContentsInJson(contentsJson);
+            } catch (IOException e) {
+                System.out.println("Can't update the content");
+            }
         }
     }
 
