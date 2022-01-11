@@ -299,6 +299,7 @@ public class FileSystemManger implements FileManager{
         jsonFile.write(jsonObject.toJSONString());
         jsonFile.flush();
         jsonFile.close();
+        recognizeContents();
     }
 
     @Override

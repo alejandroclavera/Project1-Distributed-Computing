@@ -76,15 +76,15 @@ public class WSClient {
     }
 
     public static Response generateID() throws IOException {
-        HttpURLConnection conn = openHttpConnection(apiUrl + "node/register");
+        HttpURLConnection conn = openHttpConnection(apiUrl + "node/register/");
 
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Content-Type", "application/json");
 
-        conn.setDoOutput(true);
+        /*conn.setDoOutput(true);
         OutputStream os = conn.getOutputStream();
         os.write("{\"public_key\": 0}".getBytes());
-        os.flush();
+        os.flush();*/
 
         // Get json Response body and close the connection
         JSONObject json = getResponseJSONBody(conn);
