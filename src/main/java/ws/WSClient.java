@@ -81,11 +81,6 @@ public class WSClient {
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Content-Type", "application/json");
 
-        /*conn.setDoOutput(true);
-        OutputStream os = conn.getOutputStream();
-        os.write("{\"public_key\": 0}".getBytes());
-        os.flush();*/
-
         // Get json Response body and close the connection
         JSONObject json = getResponseJSONBody(conn);
         conn.disconnect();
